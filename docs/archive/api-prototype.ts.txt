@@ -1,0 +1,220 @@
+import 'dotenv/config';
+import express, { NextFunction, Request, Response } from 'express';
+import cors from 'cors';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
+import { z } from 'zod';
+
+export const prisma = new PrismaClient();
+export const app = express();
+const businessId = process.env.BUSINESS_ID ?? '00000000-0000-4000-8000-000000000001';
+const api = express.Router();
+
+app.use(cors());
+app.use(express.json());
+app.use('/api/v1', api);
+
+class ApiError extends Error {
+  constructor(public status: number, message: string) { super(message); }
+}
+const route = (handler: (req: Request, res: Response) => Promise<unknown>) =>
+  (req: Request, res: Response, next: NextFunction) => Promise.resolve(handler(req, res)).catch(next);
+const fail = (status: number, message: string): never => { throw new ApiError(status, message); };
+const productInput = z.object({
+  name: z.string().trim().min(1).max(120), sku: z.string().trim().min(1).max(60),
+  barcode: z.string().trim().max(80).optional().nullable(), categoryId: z.string().uuid().optional().nullable(),
+  purchaseCostMinor: z.number().int().nonnegative(), sellingPriceMinor: z.number().int().positive(),
+  lowStockThreshold: z.number().int().nonnegative().default(5), isActive: z.boolean().default(true),
+});
+const saleInput = z.object({
+  paymentMethod: z.enum(['CASH', 'MOBILE_MONEY']),
+  items: z.array(z.object({ productId: z.string().uuid(), quantity: z.number().int().positive() })).min(1),
+});
+const receiptInput = z.object({
+  productId: z.string().uuid(), quantity: z.number().int().positive(), unitCostMinor: z.number().int().nonnegative(),
+  supplierName: z.string().trim().max(120).optional(), reference: z.string().trim().max(80).optional(),
+});
+const parseBody = <T>(schema: z.ZodType<T>, body: unknown): T => {
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) fail(400, parsed.error.issues.map((issue) => issue.message).join('; '));
+  return parsed.data as T;
+};
+const productInclude = { category: true, stockLevel: true } as const;
+
+api.get('/health', (_req, res) => res.json({ status: 'ok' }));
+api.get('/business', route(async (_req, res) => {
+  const business = await prisma.business.findUnique({ where: { id: businessId } });
+  if (!business) fail(404, 'Business is not initialized. Run the demo seed.');
+  res.json(business);
+}));
+api.patch('/business', route(async (req, res) => {
+  const schema = z.object({ name: z.string().trim().min(1).max(120), phone: z.string().trim().max(40).optional().nullable(), address: z.string().trim().max(240).optional().nullable() });
+  const data = parseBody(schema, req.body);
+  res.json(await prisma.business.update({ where: { id: businessId }, data }));
+}));
+api.get('/categories', route(async (_req, res) => res.json(await prisma.category.findMany({ where: { businessId }, orderBy: { name: 'asc' } }))));
+api.post('/categories', route(async (req, res) => {
+  const data = parseBody(z.object({ name: z.string().trim().min(1).max(80) }), req.body);
+  res.status(201).json(await prisma.category.create({ data: { ...data, businessId } }));
+}));
+api.get('/products', route(async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 100));
+  const search = String(req.query.search ?? '').trim();
+  const categoryId = String(req.query.categoryId ?? '');
+  const products = await prisma.product.findMany({
+    where: { businessId, ...(req.query.active === 'true' ? { isActive: true } : {}), ...(categoryId ? { categoryId } : {}),
+      ...(search ? { OR: [{ name: { contains: search, mode: 'insensitive' } }, { sku: { contains: search, mode: 'insensitive' } }, { barcode: { contains: search } }] } : {}) },
+    include: productInclude, orderBy: { name: 'asc' }, skip: (page - 1) * limit, take: limit,
+  });
+  res.json({ data: products, page, limit });
+}));
+api.get('/products/:id', route(async (req, res) => {
+  const product = await prisma.product.findFirst({ where: { id: req.params.id, businessId }, include: productInclude });
+  if (!product) fail(404, 'Product not found');
+  res.json(product);
+}));
+api.post('/products', route(async (req, res) => {
+  const data = parseBody(productInput, req.body);
+  const product = await prisma.$transaction(async (tx) => {
+    const created = await tx.product.create({ data: { ...data, barcode: data.barcode || null, businessId } });
+    await tx.stockLevel.create({ data: { businessId, productId: created.id, quantity: 0 } });
+    return tx.product.findUniqueOrThrow({ where: { id: created.id }, include: productInclude });
+  });
+  res.status(201).json(product);
+}));
+api.patch('/products/:id', route(async (req, res) => {
+  const data = parseBody(productInput.partial(), req.body);
+  const result = await prisma.product.updateMany({ where: { id: req.params.id, businessId }, data: { ...data, barcode: data.barcode || null } });
+  if (!result.count) fail(404, 'Product not found');
+  res.json(await prisma.product.findUnique({ where: { id: req.params.id }, include: productInclude }));
+}));
+api.get('/inventory', route(async (_req, res) => {
+  const products = await prisma.product.findMany({ where: { businessId }, include: productInclude, orderBy: { name: 'asc' } });
+  res.json(products.map((p) => ({ ...p, stockStatus: (p.stockLevel?.quantity ?? 0) <= p.lowStockThreshold ? 'LOW' : 'IN_STOCK' })));
+}));
+api.get('/inventory/movements', route(async (req, res) => {
+  const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 100));
+  res.json(await prisma.stockMovement.findMany({ where: { businessId }, include: { product: true }, orderBy: { createdAt: 'desc' }, take: limit }));
+}));
+api.post('/inventory/receipts', route(async (req, res) => {
+  const input = parseBody(receiptInput, req.body);
+  const idempotencyKey = String(req.header('Idempotency-Key') ?? '');
+  if (!idempotencyKey) fail(400, 'Idempotency-Key header is required');
+  const prior = await prisma.stockReceipt.findUnique({ where: { businessId_idempotencyKey: { businessId, idempotencyKey } }, include: { items: true } });
+  if (prior) return res.json(prior);
+  const product = await prisma.product.findFirst({ where: { id: input.productId, businessId, isActive: true } });
+  if (!product) return fail(404, 'Active product not found');
+  const receipt = await prisma.$transaction(async (tx) => {
+    const created = await tx.stockReceipt.create({ data: { businessId, reference: input.reference || `RCV-${Date.now()}`, idempotencyKey, supplierName: input.supplierName || null } });
+    await tx.stockReceiptItem.create({ data: { receiptId: created.id, productId: product.id, quantity: input.quantity, unitCostMinor: input.unitCostMinor } });
+    const stock = await tx.stockLevel.upsert({ where: { productId: product.id }, create: { businessId, productId: product.id, quantity: input.quantity }, update: { quantity: { increment: input.quantity } } });
+    await tx.stockMovement.create({ data: { businessId, productId: product.id, movementType: 'RECEIPT', quantityDelta: input.quantity, quantityAfter: stock.quantity, referenceType: 'RECEIPT', referenceId: created.id, reason: input.supplierName ? `Supplier: ${input.supplierName}` : null } });
+    return tx.stockReceipt.findUniqueOrThrow({ where: { id: created.id }, include: { items: { include: { product: true } } } });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  res.status(201).json(receipt);
+}));
+api.get('/inventory/receipts', route(async (_req, res) => res.json(await prisma.stockReceipt.findMany({ where: { businessId }, include: { items: { include: { product: true } } }, orderBy: { createdAt: 'desc' }, take: 100 }))));
+
+api.post('/sales', route(async (req, res) => {
+  const input = parseBody(saleInput, req.body);
+  const idempotencyKey = String(req.header('Idempotency-Key') ?? '');
+  if (!idempotencyKey) fail(400, 'Idempotency-Key header is required');
+  const prior = await prisma.sale.findUnique({ where: { businessId_idempotencyKey: { businessId, idempotencyKey } }, include: { items: { include: { product: true } } } });
+  if (prior) return res.json(prior);
+  const quantities = new Map<string, number>();
+  input.items.forEach((item) => quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity));
+  try {
+    const sale = await prisma.$transaction(async (tx) => {
+      const products = await tx.product.findMany({ where: { businessId, id: { in: [...quantities.keys()] }, isActive: true } });
+      if (products.length !== quantities.size) fail(400, 'Cart contains an unavailable or inactive product');
+      const productById = new Map(products.map((product) => [product.id, product]));
+      const lines = [...quantities.entries()].map(([productId, quantity]) => {
+        const product = productById.get(productId)!;
+        return { product, quantity, lineTotalMinor: product.sellingPriceMinor * quantity };
+      });
+      const subtotalMinor = lines.reduce((sum, line) => sum + line.lineTotalMinor, 0);
+      const now = new Date();
+      const receiptNumber = `SF-${now.toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID().slice(0, 8).toUpperCase()}`;
+      const created = await tx.sale.create({ data: { businessId, receiptNumber, idempotencyKey, subtotalMinor, totalMinor: subtotalMinor, paymentMethod: input.paymentMethod,
+        items: { create: lines.map((line) => ({ productId: line.product.id, quantity: line.quantity, unitPriceMinor: line.product.sellingPriceMinor, unitCostMinor: line.product.purchaseCostMinor, lineTotalMinor: line.lineTotalMinor })) } } });
+      for (const line of [...lines].sort((a, b) => a.product.id.localeCompare(b.product.id))) {
+        const updated = await tx.stockLevel.updateMany({ where: { businessId, productId: line.product.id, quantity: { gte: line.quantity } }, data: { quantity: { decrement: line.quantity } } });
+        if (updated.count !== 1) fail(409, `Insufficient stock for ${line.product.name}`);
+        const stock = await tx.stockLevel.findUniqueOrThrow({ where: { productId: line.product.id } });
+        await tx.stockMovement.create({ data: { businessId, productId: line.product.id, movementType: 'SALE', quantityDelta: -line.quantity, quantityAfter: stock.quantity, referenceType: 'SALE', referenceId: created.id, reason: 'Point of sale checkout' } });
+      }
+      return tx.sale.findUniqueOrThrow({ where: { id: created.id }, include: { items: { include: { product: true } } } });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    res.status(201).json(sale);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') fail(409, 'Stock changed during checkout. Please retry.');
+    throw error;
+  }
+}));
+api.get('/sales', route(async (req, res) => {
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+  const sales = await prisma.sale.findMany({ where: { businessId }, include: { items: { include: { product: true } } }, orderBy: { createdAt: 'desc' }, take: limit });
+  res.json(sales);
+}));
+api.get('/sales/:id', route(async (req, res) => {
+  const sale = await prisma.sale.findFirst({ where: { businessId, OR: [{ id: req.params.id }, { receiptNumber: req.params.id }] }, include: { items: { include: { product: true } }, business: true } });
+  if (!sale) fail(404, 'Sale not found');
+  res.json(sale);
+}));
+
+const utcDay = (value: Date) => new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
+const readSales = async (from?: string, to?: string) => {
+  const start = from ? new Date(`${from}T00:00:00.000Z`) : undefined;
+  const end = to ? new Date(`${to}T23:59:59.999Z`) : undefined;
+  return prisma.sale.findMany({ where: { businessId, ...(start || end ? { createdAt: { ...(start ? { gte: start } : {}), ...(end ? { lte: end } : {}) } } : {}) }, include: { items: { include: { product: true } } }, orderBy: { createdAt: 'asc' } });
+};
+const aggregateSales = <T extends { totalMinor: number; items: { quantity: number; unitCostMinor: number }[] }>(sales: T[]) => {
+  const unitsSold = sales.reduce((sum, sale) => sum + sale.items.reduce((inner, item) => inner + item.quantity, 0), 0);
+  const revenueMinor = sales.reduce((sum, sale) => sum + sale.totalMinor, 0);
+  const costMinor = sales.reduce((sum, sale) => sum + sale.items.reduce((inner, item) => inner + item.unitCostMinor * item.quantity, 0), 0);
+  return { transactionCount: sales.length, unitsSold, revenueMinor, costOfGoodsSoldMinor: costMinor, estimatedGrossProfitMinor: revenueMinor - costMinor };
+};
+api.get('/reports/summary', route(async (_req, res) => {
+  const now = new Date(); const today = utcDay(now); const month = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const [todaySales, monthSales, activeProducts, inventory, allSales] = await Promise.all([
+    prisma.sale.findMany({ where: { businessId, createdAt: { gte: today } }, include: { items: true } }),
+    prisma.sale.findMany({ where: { businessId, createdAt: { gte: month } }, include: { items: true } }),
+    prisma.product.count({ where: { businessId, isActive: true } }),
+    prisma.product.findMany({ where: { businessId, isActive: true }, include: { stockLevel: true } }),
+    prisma.sale.findMany({ where: { businessId, createdAt: { gte: new Date(today.getTime() - 6 * 86400000) } }, include: { items: true } }),
+  ]);
+  const trend = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today.getTime() - (6 - index) * 86400000);
+    const day = allSales.filter((sale) => utcDay(sale.createdAt).getTime() === date.getTime());
+    return { date: date.toISOString().slice(0, 10), revenueMinor: day.reduce((sum, sale) => sum + sale.totalMinor, 0) };
+  });
+  const recent = await prisma.sale.findMany({ where: { businessId }, include: { items: true }, orderBy: { createdAt: 'desc' }, take: 5 });
+  const best = await prisma.saleItem.findMany({ where: { sale: { businessId } }, include: { product: true } });
+  const top = new Map<string, { name: string; quantity: number; revenueMinor: number }>();
+  for (const item of best) { const entry = top.get(item.productId) ?? { name: item.product.name, quantity: 0, revenueMinor: 0 }; entry.quantity += item.quantity; entry.revenueMinor += item.lineTotalMinor; top.set(item.productId, entry); }
+  res.json({ today: aggregateSales(todaySales), month: aggregateSales(monthSales), activeProducts, lowStockCount: inventory.filter((p) => (p.stockLevel?.quantity ?? 0) <= p.lowStockThreshold).length, trend, recent, bestSellers: [...top.values()].sort((a, b) => b.quantity - a.quantity).slice(0, 5) });
+}));
+api.get('/reports/sales', route(async (req, res) => res.json(aggregateSales(await readSales(String(req.query.from ?? '') || undefined, String(req.query.to ?? '') || undefined)))));
+api.get('/reports/products', route(async (req, res) => {
+  const sales = await readSales(String(req.query.from ?? '') || undefined, String(req.query.to ?? '') || undefined);
+  const totals = new Map<string, { product: string; sku: string; unitsSold: number; revenueMinor: number; costMinor: number }>();
+  for (const sale of sales) for (const item of sale.items) { const row = totals.get(item.productId) ?? { product: item.product.name, sku: item.product.sku, unitsSold: 0, revenueMinor: 0, costMinor: 0 }; row.unitsSold += item.quantity; row.revenueMinor += item.lineTotalMinor; row.costMinor += item.quantity * item.unitCostMinor; totals.set(item.productId, row); }
+  res.json([...totals.values()].sort((a, b) => b.unitsSold - a.unitsSold));
+}));
+api.get('/reports/low-stock', route(async (_req, res) => {
+  const products = await prisma.product.findMany({ where: { businessId, isActive: true }, include: productInclude });
+  res.json(products.filter((p) => (p.stockLevel?.quantity ?? 0) <= p.lowStockThreshold).map((p) => ({ ...p, quantity: p.stockLevel?.quantity ?? 0 })));
+}));
+
+app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  if (error instanceof ApiError) return res.status(error.status).json({ error: error.message });
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return res.status(409).json({ error: 'A record with that SKU, barcode, or idempotency key already exists.' });
+  console.error(error);
+  res.status(500).json({ error: 'An unexpected server error occurred.' });
+});
+
+if (require.main === module) {
+  const port = Number(process.env.PORT ?? 5000);
+  app.listen(port, () => console.log(`StockFlow API listening on http://localhost:${port}`));
+}

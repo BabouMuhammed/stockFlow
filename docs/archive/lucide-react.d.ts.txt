@@ -1,0 +1,30 @@
+declare module 'lucide-react' {
+  import type { FC, SVGProps } from 'react';
+  type IconProps = SVGProps<SVGSVGElement> & {
+    size?: number | string;
+    absoluteStrokeWidth?: boolean;
+  };
+  export const Activity: FC<IconProps>;
+  export const ArrowDownToLine: FC<IconProps>;
+  export const ArrowLeftRight: FC<IconProps>;
+  export const BarChart3: FC<IconProps>;
+  export const Boxes: FC<IconProps>;
+  export const ChevronDown: FC<IconProps>;
+  export const CircleAlert: FC<IconProps>;
+  export const ClipboardList: FC<IconProps>;
+  export const CreditCard: FC<IconProps>;
+  export const LayoutDashboard: FC<IconProps>;
+  export const LoaderCircle: FC<IconProps>;
+  export const LogOut: FC<IconProps>;
+  export const Menu: FC<IconProps>;
+  export const Plus: FC<IconProps>;
+  export const Printer: FC<IconProps>;
+  export const Search: FC<IconProps>;
+  export const Settings: FC<IconProps>;
+  export const ShoppingBasket: FC<IconProps>;
+  export const ShoppingCart: FC<IconProps>;
+  export const Store: FC<IconProps>;
+  export const Trash2: FC<IconProps>;
+  export const TrendingUp: FC<IconProps>;
+  export const X: FC<IconProps>;
+}

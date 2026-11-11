@@ -1,0 +1,31 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import App from './App';
+
+const product = { id: '00000000-0000-4000-8000-000000000010', name: 'Bottled Water 1.5L', sku: 'WAT-15', barcode: '6151001', sellingPriceMinor: 2500, purchaseCostMinor: 1800, lowStockThreshold: 5, isActive: true, category: { id: '00000000-0000-4000-8000-000000000020', name: 'Beverages' }, stockLevel: { quantity: 8, updatedAt: new Date().toISOString() } };
+function setup(path: string) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}><MemoryRouter initialEntries={[path]}><App /></MemoryRouter></QueryClientProvider>);
+}
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {
+    const path = String(url);
+    if (path.endsWith('/business')) return Response.json({ name: 'Test Mart', currency: 'GMD' });
+    if (path.includes('/products?active=true')) return Response.json({ data: [product] });
+    if (path.includes('/sales') && options?.method === 'POST') return Response.json({ id: 'sale-1', receiptNumber: 'SF-TEST', totalMinor: 2500, subtotalMinor: 2500, paymentMethod: 'CASH', createdAt: new Date().toISOString(), items: [{ id: 'item-1', productId: product.id, quantity: 1, unitPriceMinor: 2500, unitCostMinor: 1800, lineTotalMinor: 2500, product }], business: { name: 'Test Mart' } }, { status: 201 });
+    return Response.json([]);
+  }));
+});
+
+describe('StockFlow POS', () => {
+  it('calculates the cart and displays a saved receipt after checkout', async () => {
+    setup('/pos');
+    fireEvent.click(await screen.findByRole('button', { name: /Bottled Water 1.5L/i }));
+    expect(await screen.findAllByText(/25\.00/)).not.toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: /Complete sale/i }));
+    expect(await screen.findByText('Sale recorded')).toBeTruthy();
+    expect(screen.getByText('SF-TEST')).toBeTruthy();
+  });
+});

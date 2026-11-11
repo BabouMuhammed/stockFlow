@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Business {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String
+  phone     String?
+  address   String?
+  currency  String     @default("GMD")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  categories Category[]
+  products  Product[]
+  stockLevels StockLevel[]
+  receipts  StockReceipt[]
+  movements StockMovement[]
+  sales     Sale[]
+}
+
+model Category {
+  id         String    @id @default(uuid()) @db.Uuid
+  businessId String    @db.Uuid
+  name       String
+  createdAt  DateTime  @default(now())
+  business   Business  @relation(fields: [businessId], references: [id])
+  products   Product[]
+  @@unique([businessId, name])
+}
+
+model Product {
+  id                  String    @id @default(uuid()) @db.Uuid
+  businessId          String    @db.Uuid
+  categoryId          String?   @db.Uuid
+  name                String
+  sku                 String
+  barcode             String?
+  purchaseCostMinor   Int
+  sellingPriceMinor   Int
+  lowStockThreshold   Int       @default(5)
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  business            Business  @relation(fields: [businessId], references: [id])
+  category            Category? @relation(fields: [categoryId], references: [id])
+  stockLevel          StockLevel?
+  receiptItems        StockReceiptItem[]
+  movements           StockMovement[]
+  saleItems            SaleItem[]
+  @@unique([businessId, sku])
+  @@unique([businessId, barcode])
+  @@index([businessId, name])
+}
+
+model StockLevel {
+  id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @db.Uuid
+  productId  String   @unique @db.Uuid
+  quantity   Int      @default(0)
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+  @@unique([businessId, productId])
+}
+
+model StockReceipt {
+  id             String            @id @default(uuid()) @db.Uuid
+  businessId     String            @db.Uuid
+  reference      String
+  idempotencyKey String
+  supplierName   String?
+  createdAt      DateTime          @default(now())
+  business       Business          @relation(fields: [businessId], references: [id])
+  items          StockReceiptItem[]
+  @@unique([businessId, idempotencyKey])
+  @@index([businessId, createdAt])
+}
+
+model StockReceiptItem {
+  id           String      @id @default(uuid()) @db.Uuid
+  receiptId    String      @db.Uuid
+  productId    String      @db.Uuid
+  quantity     Int
+  unitCostMinor Int
+  receipt      StockReceipt @relation(fields: [receiptId], references: [id])
+  product      Product     @relation(fields: [productId], references: [id])
+}
+
+model StockMovement {
+  id           String   @id @default(uuid()) @db.Uuid
+  businessId   String   @db.Uuid
+  productId    String   @db.Uuid
+  movementType String
+  quantityDelta Int
+  quantityAfter Int
+  referenceType String
+  referenceId  String?  @db.Uuid
+  reason       String?
+  createdAt    DateTime @default(now())
+  business     Business @relation(fields: [businessId], references: [id])
+  product      Product  @relation(fields: [productId], references: [id])
+  @@index([businessId, createdAt])
+}
+
+model Sale {
+  id             String      @id @default(uuid()) @db.Uuid
+  businessId     String      @db.Uuid
+  receiptNumber  String
+  idempotencyKey String
+  status         String      @default("COMPLETED")
+  subtotalMinor  Int
+  totalMinor     Int
+  paymentMethod  String
+  createdAt      DateTime    @default(now())
+  business       Business   @relation(fields: [businessId], references: [id])
+  items          SaleItem[]
+  @@unique([businessId, receiptNumber])
+  @@unique([businessId, idempotencyKey])
+  @@index([businessId, createdAt])
+}
+
+model SaleItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  saleId         String   @db.Uuid
+  productId      String   @db.Uuid
+  quantity       Int
+  unitPriceMinor Int
+  unitCostMinor  Int
+  lineTotalMinor Int
+  sale           Sale     @relation(fields: [saleId], references: [id])
+  product        Product  @relation(fields: [productId], references: [id])
+}

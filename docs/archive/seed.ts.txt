@@ -1,0 +1,45 @@
+import 'dotenv/config';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+const businessId = process.env.BUSINESS_ID ?? '00000000-0000-4000-8000-000000000001';
+const categories = ['Rice and grains', 'Beverages', 'Cooking essentials', 'Dairy', 'Household products', 'Snacks'];
+const products = [
+  { name: 'Rice 25kg', sku: 'RICE-25', barcode: '6151101000251', category: 'Rice and grains', cost: 185000, price: 220000, stock: 18 },
+  { name: 'Sugar 1kg', sku: 'SUG-1KG', barcode: '6151101001005', category: 'Rice and grains', cost: 7500, price: 9500, stock: 35 },
+  { name: 'Cooking Oil 1L', sku: 'OIL-1L', barcode: '6151101002002', category: 'Cooking essentials', cost: 10500, price: 13500, stock: 22 },
+  { name: 'Bottled Water 1.5L', sku: 'WAT-15', barcode: '6151101003009', category: 'Beverages', cost: 1800, price: 2500, stock: 42 },
+  { name: 'Milk 1L', sku: 'MLK-1L', barcode: '6151101004006', category: 'Dairy', cost: 9500, price: 12000, stock: 16 },
+  { name: 'Flour 1kg', sku: 'FLR-1KG', barcode: '6151101005003', category: 'Rice and grains', cost: 6500, price: 8500, stock: 26 },
+  { name: 'Laundry Soap', sku: 'SOAP-01', barcode: '6151101006000', category: 'Household products', cost: 4500, price: 6000, stock: 12 },
+  { name: 'Soft Drink 500ml', sku: 'SODA-500', barcode: '6151101007007', category: 'Beverages', cost: 2500, price: 3500, stock: 30 },
+  { name: 'Biscuits', sku: 'SNACK-01', barcode: '6151101008004', category: 'Snacks', cost: 2000, price: 3000, stock: 24 },
+];
+async function main() {
+  if (businessId !== '00000000-0000-4000-8000-000000000001') throw new Error('Refusing seed: BUSINESS_ID is not the fixed demo business ID.');
+  const existingBusiness = await prisma.business.findUnique({ where: { id: businessId } });
+  if (existingBusiness && existingBusiness.name !== 'StockFlow Demo Mart') throw new Error('Refusing seed: the configured business is not StockFlow Demo Mart.');
+  await prisma.business.upsert({ where: { id: businessId }, create: { id: businessId, name: 'StockFlow Demo Mart', phone: '+220 700 1234', address: 'Serrekunda, The Gambia', currency: 'GMD' }, update: {} });
+  const categoryIds = new Map<string, string>();
+  for (const name of categories) {
+    const category = await prisma.category.upsert({ where: { businessId_name: { businessId, name } }, create: { businessId, name }, update: {} });
+    categoryIds.set(name, category.id);
+  }
+  for (const item of products) {
+    const product = await prisma.product.upsert({ where: { businessId_sku: { businessId, sku: item.sku } },
+      create: { businessId, name: item.name, sku: item.sku, barcode: item.barcode, categoryId: categoryIds.get(item.category), purchaseCostMinor: item.cost, sellingPriceMinor: item.price, lowStockThreshold: 5 },
+      update: { name: item.name, barcode: item.barcode, categoryId: categoryIds.get(item.category), purchaseCostMinor: item.cost, sellingPriceMinor: item.price, lowStockThreshold: 5, isActive: true } });
+    await prisma.stockLevel.upsert({ where: { productId: product.id }, create: { businessId, productId: product.id, quantity: 0 }, update: {} });
+    const key = `DEMO-OPENING-${item.sku}`;
+    const receiptExists = await prisma.stockReceipt.findUnique({ where: { businessId_idempotencyKey: { businessId, idempotencyKey: key } } });
+    if (!receiptExists) {
+      await prisma.$transaction(async (tx) => {
+        const receipt = await tx.stockReceipt.create({ data: { businessId, reference: `OPENING-${item.sku}`, idempotencyKey: key, supplierName: 'Demo opening stock' } });
+        await tx.stockReceiptItem.create({ data: { receiptId: receipt.id, productId: product.id, quantity: item.stock, unitCostMinor: item.cost } });
+        const level = await tx.stockLevel.update({ where: { productId: product.id }, data: { quantity: { increment: item.stock } } });
+        await tx.stockMovement.create({ data: { businessId, productId: product.id, movementType: 'RECEIPT', quantityDelta: item.stock, quantityAfter: level.quantity, referenceType: 'RECEIPT', referenceId: receipt.id, reason: 'Opening demonstration stock' } });
+      });
+    }
+  }
+  console.log('Demo Mart and demonstration products are ready.');
+}
+main().catch((error) => { console.error(error); process.exitCode = 1; }).finally(() => prisma.$disconnect());

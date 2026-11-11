@@ -1,0 +1,39 @@
+{
+  "name": "stockflow",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c green,blue \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm --workspace apps/api run dev",
+    "dev:web": "npm --workspace apps/web run dev",
+    "build": "npm run build --workspace apps/api && npm run build --workspace apps/web",
+    "test": "npm run test --workspace apps/api && npm run test --workspace apps/web",
+    "db:generate": "npm --workspace apps/api run db:generate",
+    "db:migrate": "npm --workspace apps/api run db:migrate",
+    "db:seed": "npm --workspace apps/api run db:seed",
+    "lint": "eslint apps shared",
+    "format:check": "prettier --check apps shared docs README.md package.json .env.example",
+    "db:deploy": "npm --workspace apps/api run db:deploy",
+    "db:status": "npm --workspace apps/api run db:status",
+    "owner:bootstrap": "npm --workspace apps/api run owner:bootstrap --"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "25.0.1",
+    "prettier": "^3.9.10",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "6.4.5"
+  },
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+  }
+}

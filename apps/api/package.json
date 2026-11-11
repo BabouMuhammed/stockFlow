@@ -1,0 +1,42 @@
+{
+  "name": "@stockflow/api",
+  "private": true,
+  "version": "1.0.0",
+  "main": "dist/src/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "build:production": "npm run db:generate && npm run build",
+    "start": "node dist/src/index.js",
+    "test": "vitest run",
+    "db:generate": "tsx scripts/prisma.ts generate",
+    "db:migrate": "tsx scripts/prisma.ts migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:deploy": "tsx scripts/prisma.ts migrate deploy",
+    "db:status": "tsx scripts/prisma.ts migrate status",
+    "owner:bootstrap": "tsx scripts/bootstrap-owner.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.3",
+    "proxy-addr": "^2.0.8",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "4.17.21",
+    "@types/node": "^22.10.5",
+    "@types/proxy-addr": "^2.0.3",
+    "@types/supertest": "^6.0.2",
+    "prisma": "^6.2.1",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "vitest": "5.1.0"
+  }
+}

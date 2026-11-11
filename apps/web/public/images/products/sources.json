@@ -1,0 +1,82 @@
+[
+  {
+    "key": "sugar",
+    "file": "sugar.jpg",
+    "source": "https://world.openfoodfacts.org/product/3220035150007",
+    "imageUrl": "https://images.openfoodfacts.org/images/products/322/003/515/0007/front_fr.121.400.jpg",
+    "artist": "org-saint-louis-sucre",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "name": "Etui Bec Verseur Sucre en Poudre Saint Louis Sucre 1kg"
+  },
+  {
+    "key": "milk",
+    "file": "milk.jpg",
+    "source": "https://world.openfoodfacts.org/product/5941355009711",
+    "imageUrl": "https://images.openfoodfacts.org/images/products/594/135/500/9711/front_ro.26.400.jpg",
+    "artist": "anonymous-2wwss2bv74",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "name": "Boni Lapte de consum integral 3,5% grasime"
+  },
+  {
+    "key": "water",
+    "file": "water.jpg",
+    "source": "https://world.openfoodfacts.org/product/3068320084602",
+    "imageUrl": "https://images.openfoodfacts.org/images/products/306/832/008/4602/front_de.62.400.jpg",
+    "artist": "prepperapp",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "name": "Evian Mineralwasser, PET, 1.5L"
+  },
+  {
+    "key": "flour",
+    "file": "flour.jpg",
+    "source": "https://world.openfoodfacts.org/product/3068110702235",
+    "imageUrl": "https://images.openfoodfacts.org/images/products/306/811/070/2235/front_fr.80.400.jpg",
+    "artist": "quentinbrd",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "name": "Farine de blé T45"
+  },
+  {
+    "key": "soda",
+    "file": "soda.jpg",
+    "source": "https://world.openfoodfacts.org/product/54491472",
+    "imageUrl": "https://images.openfoodfacts.org/images/products/000/005/449/1472/front_en.801.400.jpg",
+    "artist": "martepato",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "name": "Cola"
+  },
+  {
+    "key": "rice",
+    "file": "rice.jpg",
+    "source": "https://www.carrefour.ke/mafken/en/c/65601",
+    "imageUrl": "https://cdn.mafrservices.com/sys-master-root/h63/hd0/48314829897758/185379_main.jpg?im=Resize%3D800",
+    "artist": "Asanta / Carrefour Kenya",
+    "license": "Copyright retained by source; local design preview",
+    "licenseUrl": "https://www.carrefour.ke/mafken/en/c/65601",
+    "name": "Asanta long grain rice 25kg"
+  },
+  {
+    "key": "oil",
+    "file": "oil.jpg",
+    "source": "https://www.sainsburys.co.uk/gol-ui/product/pancakeday/sainsburys-sunflower-oil-1l",
+    "imageUrl": "https://assets.sainsburys-groceries.co.uk/gol/64491/1/640x640.jpg",
+    "artist": "Sainsbury's",
+    "license": "Copyright retained by source; local design preview",
+    "licenseUrl": "https://www.sainsburys.co.uk/gol-ui/product/pancakeday/sainsburys-sunflower-oil-1l",
+    "name": "Sunflower oil 1L"
+  },
+  {
+    "key": "soap",
+    "file": "soap.jpg",
+    "source": "https://www.merzava.com/es/p/jabon-de-lavanderia-fama-sin-empaque-400-gr/5589",
+    "imageUrl": "https://cdn-merza.aktiosdigitalservices.com/tol/merza/media/product/img/1600x1600/5589_1.jpg?t=20230531155710",
+    "artist": "FAMA / Merza",
+    "license": "Copyright retained by source; local design preview",
+    "licenseUrl": "https://www.merzava.com/es/p/jabon-de-lavanderia-fama-sin-empaque-400-gr/5589",
+    "name": "FAMA laundry soap bar"
+  }
+]

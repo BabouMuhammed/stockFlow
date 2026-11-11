@@ -1,0 +1,46 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import request from 'supertest';
+import { randomUUID } from 'node:crypto';
+
+const testUrl = process.env.TEST_DATABASE_URL;
+const describeWithDatabase = testUrl ? describe : describe.skip;
+let app: typeof import('../index').app;
+let prisma: typeof import('../index').prisma;
+const businessId = '00000000-0000-4000-8000-000000000099';
+let productId = '';
+
+beforeAll(async () => {
+  if (!testUrl) return;
+  process.env.DATABASE_URL = testUrl;
+  process.env.BUSINESS_ID = businessId;
+  ({ app, prisma } = await import('../index'));
+  await prisma.business.upsert({ where: { id: businessId }, create: { id: businessId, name: 'StockFlow Test Mart' }, update: {} });
+  const product = await prisma.product.create({ data: { businessId, name: 'Test water', sku: `TEST-${randomUUID()}`, purchaseCostMinor: 100, sellingPriceMinor: 200, lowStockThreshold: 1 } });
+  productId = product.id;
+  await prisma.stockLevel.create({ data: { businessId, productId, quantity: 3 } });
+});
+afterAll(async () => {
+  if (!testUrl || !prisma) return;
+  await prisma.saleItem.deleteMany({ where: { sale: { businessId } } });
+  await prisma.sale.deleteMany({ where: { businessId } });
+  await prisma.stockMovement.deleteMany({ where: { businessId } });
+  await prisma.stockLevel.deleteMany({ where: { businessId } });
+  await prisma.product.deleteMany({ where: { businessId } });
+  await prisma.business.deleteMany({ where: { id: businessId } });
+  await prisma.$disconnect();
+});
+
+describeWithDatabase('POST /api/v1/sales (dedicated PostgreSQL test database)', () => {
+  it('records authoritative price snapshots and deducts stock exactly once for a repeated key', async () => {
+    const key = randomUUID();
+    const first = await request(app).post('/api/v1/sales').set('Idempotency-Key', key).send({ paymentMethod: 'CASH', items: [{ productId, quantity: 2 }] }).expect(201);
+    const second = await request(app).post('/api/v1/sales').set('Idempotency-Key', key).send({ paymentMethod: 'CASH', items: [{ productId, quantity: 2 }] }).expect(200);
+    expect(second.body.id).toBe(first.body.id);
+    expect(first.body.items[0]).toMatchObject({ quantity: 2, unitPriceMinor: 200, unitCostMinor: 100 });
+    expect((await prisma.stockLevel.findUniqueOrThrow({ where: { productId } })).quantity).toBe(1);
+  });
+  it('rejects overselling and leaves the stock balance unchanged', async () => {
+    await request(app).post('/api/v1/sales').set('Idempotency-Key', randomUUID()).send({ paymentMethod: 'CASH', items: [{ productId, quantity: 2 }] }).expect(409);
+    expect((await prisma.stockLevel.findUniqueOrThrow({ where: { productId } })).quantity).toBe(1);
+  });
+});

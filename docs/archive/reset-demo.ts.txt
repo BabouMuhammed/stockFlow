@@ -1,0 +1,21 @@
+import 'dotenv/config';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+const businessId = process.env.BUSINESS_ID ?? '00000000-0000-4000-8000-000000000001';
+async function main() {
+  if (businessId !== '00000000-0000-4000-8000-000000000001') throw new Error('Refusing reset: BUSINESS_ID is not the fixed demo business ID.');
+  const business = await prisma.business.findUnique({ where: { id: businessId } });
+  if (!business || business.name !== 'StockFlow Demo Mart') throw new Error('Refusing reset: the configured business is not the seeded StockFlow Demo Mart.');
+  await prisma.$transaction(async (tx) => {
+    await tx.saleItem.deleteMany({ where: { sale: { businessId } } });
+    await tx.sale.deleteMany({ where: { businessId } });
+    await tx.stockMovement.deleteMany({ where: { businessId } });
+    await tx.stockReceiptItem.deleteMany({ where: { receipt: { businessId } } });
+    await tx.stockReceipt.deleteMany({ where: { businessId } });
+    await tx.stockLevel.updateMany({ where: { businessId }, data: { quantity: 0 } });
+    await tx.product.deleteMany({ where: { businessId } });
+    await tx.category.deleteMany({ where: { businessId } });
+  });
+  console.log('Demo transactions and products cleared. Run db:seed to recreate the demo catalog.');
+}
+main().catch((error) => { console.error(error); process.exitCode = 1; }).finally(() => prisma.$disconnect());

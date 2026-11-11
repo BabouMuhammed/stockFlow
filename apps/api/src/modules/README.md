@@ -1,0 +1,1 @@
+Phase 2A implements auth.ts and catalogue.ts with verified PostgreSQL sessions, role/CSRF checks, tenant-scoped queries and transactional audit events. Inventory, sales, reporting and staff remain explicit 501 route groups in app.ts. Archived prototype code is reference only and is never imported by the server.
