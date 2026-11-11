@@ -7,6 +7,7 @@ config({ path: resolve(process.cwd(), process.cwd().endsWith('api') ? '../../.en
 export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    DEPLOYMENT_MODE: z.enum(['app', 'bootstrap']).default('app'),
     DATABASE_URL: z
       .string()
       .url()
@@ -42,12 +43,12 @@ export const envSchema = z
     const issue = (path: string, message: string) =>
       ctx.addIssue({ code: 'custom', path: [path], message });
     if (value.NODE_ENV === 'production') {
-      if (!productionOrigin.safeParse(value.WEB_ORIGIN).success)
+      if (value.DEPLOYMENT_MODE === 'app' && !productionOrigin.safeParse(value.WEB_ORIGIN).success)
         issue('WEB_ORIGIN', 'Production requires an explicit public HTTPS frontend origin');
       for (const entry of value.WEB_ORIGINS ?? [])
         if (!productionOrigin.safeParse(entry).success)
           issue('WEB_ORIGINS', 'Production permits only exact public HTTPS origins');
-      if (!value.TRUSTED_PROXY_CIDRS.length)
+      if (value.DEPLOYMENT_MODE === 'app' && !value.TRUSTED_PROXY_CIDRS.length)
         issue(
           'TRUSTED_PROXY_CIDRS',
           'Production requires explicitly verified ingress proxy IPs/CIDRs',
@@ -55,9 +56,22 @@ export const envSchema = z
       if (value.IMAGE_STORAGE === 'local')
         issue('IMAGE_STORAGE', 'Temporary local image storage is forbidden in production');
     } else {
+      if (value.DEPLOYMENT_MODE === 'bootstrap')
+        issue('DEPLOYMENT_MODE', 'Bootstrap mode is reserved for production infrastructure setup');
       for (const entry of [value.WEB_ORIGIN, ...(value.WEB_ORIGINS ?? [])])
         if (entry && !localOrigin.safeParse(entry).success)
           issue('WEB_ORIGIN', 'Development/test frontend origins must be loopback origins');
+    }
+    if (value.DEPLOYMENT_MODE === 'bootstrap') {
+      if (value.WEB_ORIGIN || value.WEB_ORIGINS)
+        issue('WEB_ORIGIN', 'Omit frontend origins during bootstrap; browser APIs are disabled');
+      if (value.TRUSTED_PROXY_CIDRS.length)
+        issue(
+          'TRUSTED_PROXY_CIDRS',
+          'Omit trusted proxies during bootstrap; forwarded headers are not trusted',
+        );
+      if (value.IMAGE_STORAGE && value.IMAGE_STORAGE !== 'disabled')
+        issue('IMAGE_STORAGE', 'Bootstrap mode permits only disabled image storage');
     }
     if (
       value.WEB_ORIGINS &&
@@ -71,7 +85,11 @@ export const envSchema = z
   })
   .transform((value) => ({
     ...value,
-    WEB_ORIGIN: value.WEB_ORIGIN ?? 'http://localhost:5173',
+    WEB_ORIGIN:
+      value.WEB_ORIGIN ??
+      (value.DEPLOYMENT_MODE === 'bootstrap'
+        ? 'https://bootstrap.invalid'
+        : 'http://localhost:5173'),
     IMAGE_STORAGE:
       value.IMAGE_STORAGE ??
       (value.NODE_ENV === 'production' ? ('disabled' as const) : ('local' as const)),

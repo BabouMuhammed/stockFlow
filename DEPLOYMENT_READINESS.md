@@ -6,11 +6,34 @@ Updated: 11 November 2026 (Europe/London).
 
 This document supersedes the initial readiness audit. No Prisma schema or migration, database record, local .env credential, or POS financial calculation was changed. Tests that apply migrations or create PostgreSQL records remain skipped. Production database connections have not been made.
 
+## Deploying the backend before the frontend
+
+Backend-first infrastructure deployment is supported with DEPLOYMENT_MODE=bootstrap. This mode exposes only /api/v1/health and /api/v1/health/ready. All login, registration and business requests return 503 BOOTSTRAP_MODE, no credentialed CORS is enabled, and forwarded headers are not trusted. Health responses explicitly contain mode=bootstrap and applicationReady=false. A successful readiness check confirms infrastructure only, not an enabled retail application.
+
+Use these Render variables for the first backend deployment:
+
+| Variable        | Value                                                                        |
+| --------------- | ---------------------------------------------------------------------------- |
+| DATABASE_URL    | The new Render database's Internal Database URL, entered privately in Render |
+| NODE_ENV        | production                                                                   |
+| DEPLOYMENT_MODE | bootstrap                                                                    |
+| NODE_VERSION    | 22                                                                           |
+| IMAGE_STORAGE   | disabled                                                                     |
+| SESSION_HOURS   | 8                                                                            |
+
+Remove WEB_ORIGIN, WEB_ORIGINS, TRUSTED_PROXY_CIDRS and UPLOAD_DIR from this initial service configuration. Do not substitute localhost, guessed networks or empty origin fields. Render supplies PORT; a manual PORT entry is unnecessary.
+
+Keep Root Directory blank. Build with: npm ci --include=dev && npm run build:production --workspace apps/api.
+
+On a Free single-instance demo service, which has no pre-deploy command, use Start Command: npm run db:deploy && node apps/api/dist/src/index.js. This applies pending migrations to the configured Render database before the server starts; if migration fails the server does not start. It must never be executed against the local application database as part of these instructions. On a paid service, use the separate pre-deploy command and Node start command below. See [Render pre-deploy availability](https://render.com/docs/deploys).
+
+After deployment, open /api/v1/health/ready at the actual Render service URL. Expect ready, database=connected, mode=bootstrap and applicationReady=false. Retain the public backend URL for the Vercel API rewrite. Configure the frontend and verified proxy settings before changing DEPLOYMENT_MODE to app. Full application mode still requires the exact frontend HTTPS origin and explicit trusted proxy boundaries; bootstrap does not bypass or weaken those requirements.
+
 ## Resolved code blockers
 
 | Initial blocker                           | Implemented resolution                                                                                                                                                                                                                                                                                                           |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Production mode rejected                  | NODE_ENV accepts production. Production requires an explicit canonical public HTTPS frontend origin and trusted proxy IP/CIDR configuration.                                                                                                                                                                                     |
+| Production mode rejected                  | NODE_ENV accepts production. Full application mode requires an explicit canonical public HTTPS frontend origin and trusted proxy IP/CIDR configuration. Bootstrap permits health-only backend setup without these values.                                                                                                        |
 | Public frontend origins rejected          | Development/test retain loopback-only origins. Production permits only explicitly configured exact HTTPS origins. Malformed URLs, paths, credentials, wildcards, IP/local frontend hosts and mixed local/production allowlists are rejected. An explicit allowlist must include its primary origin.                              |
 | Loopback-only API listener                | Production binds 0.0.0.0 using PORT; local development/test keep 127.0.0.1. Startup logs do not print connection credentials.                                                                                                                                                                                                    |
 | Unconfigured proxy trust                  | TRUSTED_PROXY_CIDRS accepts explicit IPs/CIDRs, not booleans, hop counts, named aliases, wildcards or /0. Express walks the forwarded chain only through configured trusted addresses. Local default trusts none. Forwarded Host and RFC Forwarded headers are discarded; ambiguous forwarded protocols are discarded.           |
@@ -129,24 +152,26 @@ Do not connect arbitrary preview deployments to demonstration data. Use one stab
 
 ## Environment names and policy
 
+DEPLOYMENT_MODE defaults to app. Use bootstrap only for production infrastructure setup; it disables all authentication and business APIs until frontend/proxy configuration is complete.
+
 No secret values are provided here. Domain names and network examples in tests are not provisioned hosting resources.
 
-| Name                  | Scope and requirement                                                                                                                                                  |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DATABASE_URL          | Required API secret: target Render PostgreSQL URL, provided only through its host secret store.                                                                        |
-| NODE_ENV              | Set production on Render. Development/test keep local behavior.                                                                                                        |
-| WEB_ORIGIN            | Required production API setting: exact canonical frontend HTTPS origin, without a trailing slash.                                                                      |
-| WEB_ORIGINS           | Optional comma-separated explicit allowlist; if present it must include WEB_ORIGIN. Only public HTTPS origins in production. No implicit localhost pair in production. |
-| TRUSTED_PROXY_CIDRS   | Required production API setting: verified ingress IPs/CIDRs. Empty by default locally. Rejects /0, wildcard, named aliases and numeric hop-count policies.             |
-| PORT                  | Render-provided API runtime port; respected by the server. Local default 5000.                                                                                         |
-| SESSION_HOURS         | Optional API lifetime, range 1-24, default 8.                                                                                                                          |
-| IMAGE_STORAGE         | Optional API setting: disabled by default in production; local by default in development/test. Production supports disabled or persistent only.                        |
-| UPLOAD_DIR            | Absolute path, required only with IMAGE_STORAGE=persistent. Omit it completely with disabled/local storage; an empty value is invalid.                                 |
-| NODE_VERSION          | Render hosting setting selecting the agreed supported Node version.                                                                                                    |
-| VITE_API_URL          | Public frontend build variable: /api/v1.                                                                                                                               |
-| ALLOW_DEMO_SEED       | Leave false/unset in production. Existing seed remains intentionally loopback-only and rejects production.                                                             |
-| ALLOW_OWNER_BOOTSTRAP | Leave false/unset in production. Existing interactive owner bootstrap remains local-only.                                                                              |
-| TEST_DATABASE_URL     | Test-only; absent from hosted runtime. Never target customer/demo application data with the test suite.                                                                |
+| Name                  | Scope and requirement                                                                                                                                                             |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DATABASE_URL          | Required API secret: target Render PostgreSQL URL, provided only through its host secret store.                                                                                   |
+| NODE_ENV              | Set production on Render. Development/test keep local behavior.                                                                                                                   |
+| WEB_ORIGIN            | Required in production app mode: exact canonical frontend HTTPS origin. Omit during bootstrap.                                                                                    |
+| WEB_ORIGINS           | Optional comma-separated explicit allowlist; if present it must include WEB_ORIGIN. Only public HTTPS origins in production. No implicit localhost pair in production.            |
+| TRUSTED_PROXY_CIDRS   | Required in production app mode: verified ingress IPs/CIDRs. Omit during bootstrap; empty by default locally. Rejects /0, wildcard, named aliases and numeric hop-count policies. |
+| PORT                  | Render-provided API runtime port; respected by the server. Local default 5000.                                                                                                    |
+| SESSION_HOURS         | Optional API lifetime, range 1-24, default 8.                                                                                                                                     |
+| IMAGE_STORAGE         | Optional API setting: disabled by default in production; local by default in development/test. Production supports disabled or persistent only.                                   |
+| UPLOAD_DIR            | Absolute path, required only with IMAGE_STORAGE=persistent. Omit it completely with disabled/local storage; an empty value is invalid.                                            |
+| NODE_VERSION          | Render hosting setting selecting the agreed supported Node version.                                                                                                               |
+| VITE_API_URL          | Public frontend build variable: /api/v1.                                                                                                                                          |
+| ALLOW_DEMO_SEED       | Leave false/unset in production. Existing seed remains intentionally loopback-only and rejects production.                                                                        |
+| ALLOW_OWNER_BOOTSTRAP | Leave false/unset in production. Existing interactive owner bootstrap remains local-only.                                                                                         |
+| TEST_DATABASE_URL     | Test-only; absent from hosted runtime. Never target customer/demo application data with the test suite.                                                                           |
 
 No COOKIE_SAMESITE, JWT secret, signing secret, TRUST_PROXY hop count or DIRECT_URL option is wired in. Use only implemented variables. Configuration failures list invalid variable names without serializing secret input values.
 
@@ -170,10 +195,10 @@ References: [deepmerge advisory](https://github.com/advisories/GHSA-ggr8-5vv4-36
 
 | Check                                                                      | Result                                                                                                                                                                                 |
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API non-database tests                                                     | 77 passed, including 33 new production configuration/security/storage cases.                                                                                                           |
+| API non-database tests                                                     | 87 passed, including 33 production security/storage cases and 10 backend-first bootstrap cases.                                                                                        |
 | PostgreSQL integration tests                                               | 57 skipped across 6 files, because they migrate/write database records.                                                                                                                |
 | Frontend tests                                                             | 79 passed, including 7 deployment-routing cases.                                                                                                                                       |
-| Total                                                                      | 156 passed; 57 skipped.                                                                                                                                                                |
+| Total                                                                      | 166 passed; 57 skipped.                                                                                                                                                                |
 | Lint and formatting                                                        | Passed.                                                                                                                                                                                |
 | TypeScript and production builds                                           | API compiler and frontend compiler/Vite passed.                                                                                                                                        |
 | Prisma schema validation                                                   | Passed without a database connection.                                                                                                                                                  |

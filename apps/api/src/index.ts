@@ -13,6 +13,7 @@ const app = createApp({
   cookieSecure: env.NODE_ENV === 'production',
   trustedProxyCidrs: env.TRUSTED_PROXY_CIDRS,
   imageStorage,
+  bootstrap: env.DEPLOYMENT_MODE === 'bootstrap',
   checkDatabase: async () => {
     await prisma.$queryRawUnsafe('SELECT 1');
     await prisma.userSession.count();

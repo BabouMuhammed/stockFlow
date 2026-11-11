@@ -19,14 +19,15 @@ export function createApp(
     db?: PrismaClient;
     trustedProxyCidrs?: readonly string[];
     imageStorage?: ImageStorage;
+    bootstrap?: boolean;
   },
 ) {
   const app = express();
-  configureProxy(app, options.trustedProxyCidrs);
+  configureProxy(app, options.bootstrap ? [] : options.trustedProxyCidrs);
   const origins = allowedWebOrigins(options.webOrigin, options.webOrigins);
   app.disable('x-powered-by');
   app.set('json replacer', jsonReplacer);
-  app.use(cors({ origin: origins, credentials: true }));
+  if (!options.bootstrap) app.use(cors({ origin: origins, credentials: true }));
   app.use((_req, res, next) => {
     res.set({
       'X-Content-Type-Options': 'nosniff',
@@ -37,11 +38,14 @@ export function createApp(
     next();
   });
   app.use(express.json({ limit: '32kb' }));
-  app.get('/api/v1/health', (_req, res) => res.json({ status: 'ok', phase: 1 }));
+  const bootstrapStatus = options.bootstrap ? { mode: 'bootstrap', applicationReady: false } : {};
+  app.get('/api/v1/health', (_req, res) =>
+    res.json({ status: 'ok', phase: 1, ...bootstrapStatus }),
+  );
   app.get('/api/v1/health/ready', async (_req, res) => {
     try {
       await options.checkDatabase();
-      res.json({ status: 'ready', database: 'connected' });
+      res.json({ status: 'ready', database: 'connected', ...bootstrapStatus });
     } catch {
       res.status(503).json({
         error: 'Database, migrations or configured image storage unavailable',
@@ -49,7 +53,16 @@ export function createApp(
       });
     }
   });
-  if (options.db) {
+  if (options.bootstrap) {
+    app.use((_req, res) =>
+      res.status(503).json({
+        error:
+          'Backend infrastructure is running. Application APIs remain disabled until frontend and proxy configuration is complete.',
+        code: 'BOOTSTRAP_MODE',
+      }),
+    );
+  }
+  if (options.db && !options.bootstrap) {
     app.use('/api/v1/products', imagesRouter(options.db, origins, options.imageStorage));
     app.use('/api/v1/auth', authRouter(options.db, { ...options, webOrigins: origins }));
     app.use('/api/v1/inventory', inventoryRouter(options.db, origins));
