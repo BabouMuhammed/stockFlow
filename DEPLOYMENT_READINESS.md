@@ -2,9 +2,16 @@
 
 Updated: 11 November 2026 (Europe/London).
 
+Stock receiving now has a second additive purchasing migration for automatic
+internal receipt numbers and separate optional supplier documents. It was backed up
+and applied locally; all original rows/columns across 22 tables were preserved.
+Current verification passes 179 API/PostgreSQL tests and 86 frontend tests; see
+[receipt reference implementation](docs/STOCK_RECEIPT_REFERENCES.md). No deployment
+or production database connection was made.
+
 **Status: production code configuration is implemented and locally verified; deployment remains gated on actual host configuration, security-advisory review and hosted acceptance checks. No application deployment has been performed.**
 
-This document supersedes the initial readiness audit. No Prisma schema or migration, database record, local .env credential, or POS financial calculation was changed. Tests that apply migrations or create PostgreSQL records remain skipped. Production database connections have not been made.
+This document supersedes the initial readiness audit. The later purchasing implementation adds one additive migration and supplier settlements; see [purchasing implementation and demo readiness](docs/PURCHASING_IMPLEMENTATION.md). Its isolated PostgreSQL verification passed 175 API tests and 85 frontend tests. Following user approval, the existing development database was backed up and migrated; original records across 20 tables matched their prior snapshots. Local .env credentials and historical POS snapshots were preserved. Production database connections have not been made.
 
 ## Current Render and Vercel configuration (2026-11-13)
 
@@ -257,7 +264,9 @@ proxy-addr 2.0.8 and its types were added explicitly for CIDR trust. Existing in
 
 References: [deepmerge advisory](https://github.com/advisories/GHSA-ggr8-5vv4-36mx), [Prisma upstream discussion](https://github.com/prisma/orm/issues/30052), [deepmerge behavior changes](https://raw.githubusercontent.com/RebeccaStevens/deepmerge-ts/main/CHANGELOG.md), [Router redirect advisory](https://github.com/advisories/GHSA-wrjc-x8rr-h8h6), [Router hydration advisory](https://github.com/advisories/GHSA-337j-9hxr-rhxg), [minimatch advisory](https://github.com/advisories/GHSA-g3hv-75wg-m249).
 
-## Verification results
+## Earlier deployment-only verification results
+
+The results in this section describe deployment-configuration work before the purchasing implementation. Current purchasing verification (175 PostgreSQL/API tests, 85 frontend tests, migration preservation and browser walkthrough) is recorded in [the implementation report](docs/PURCHASING_IMPLEMENTATION.md).
 
 | Check                                                                      | Result                                                                                                                                                                                 |
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -281,7 +290,7 @@ Normal generation into the installed Windows Prisma engine directory remains sub
 ## Future deployment procedure (not executed)
 
 1. Review this implementation, unresolved advisories and the actual intended repository. Scan tracked files and history for secrets, verify branch/ownership, and record a release commit. Do not commit .env, .local or generated clients. Publishing source code does not authorize an application deployment.
-2. Run a clean Linux npm ci/build and the unit/frontend checks. Rehearse all migrations on a separately authorized disposable PostgreSQL database; this rehearsal is outstanding, not permission to use the local application database.
+2. Run a clean Linux npm ci/build and the unit/frontend checks. The local isolated PostgreSQL migration rehearsal and historical preservation test pass; a target-version/Linux rehearsal and production backup/restore validation remain outstanding. This is not permission to use the existing local application database.
 3. Only after separate deployment authorization, create/select the Render demonstration database and API service and the Vercel project. Select supported Node versions, same-region DB/API, backup retention and a stable frontend origin. Do not use real client data.
 4. Obtain the actual Render hostname and trusted ingress network information. Replace the reserved rewrite upstream; configure exact frontend origins and verified TRUSTED_PROXY_CIDRS. Test direct/proxied header chains using controlled diagnostics, not a permanently public debug endpoint.
 5. Keep images disabled, or provision the persistent disk/root/marker before enabling persistent mode. Do not create a marker during build/pre-deploy: those stages do not have access to the mounted runtime disk.
@@ -291,7 +300,7 @@ Normal generation into the installed Windows Prisma engine directory remains sub
 9. In the authorized hosted environment, register a fictional business through normal registration, create fictional products/staff/opening stock and execute the acceptance checklist below. Existing local products, users, stock and images do not transfer automatically. Do not bypass local bootstrap/seed restrictions.
 10. Record successful checks, deployed versions, operator and rollback identifiers before sharing the client link. Disable automatic deployment until release checks are established.
 
-Six original PostgreSQL migrations remain unchanged: init, phase1_foundation, phase2a_bigint, retail_operations, actor_constraints and product_sku_counter. Preserve their checksums, PostgreSQL constraints and immutable ledger/payment/sale triggers. Production applies the existing chain with migrate deploy only. A pre-deploy migration can affect the database even if the later application deploy fails; maintain schema compatibility with the previous API.
+Six original PostgreSQL migrations remain unchanged: init, phase1_foundation, phase2a_bigint, retail_operations, actor_constraints and product_sku_counter. The additive `20261111000000_supplier_purchasing` migration adds receipt metadata and an immutable supplier settlement ledger without inventing historical payments. Its isolated migration-preservation test passes. Preserve all applied checksums and immutable ledger/payment/sale triggers. Production applies the full chain with migrate deploy only, after authorization and backup verification. A pre-deploy migration can affect the database even if the later application deploy fails; maintain schema compatibility with the previous API.
 
 ## Hosted acceptance checklist
 

@@ -10,6 +10,7 @@ import { request } from '../api';
 import { Dialog, EmptyState, Notice } from '../components/ui';
 import { QueryFeedback } from './catalogue';
 import { useSession } from './session';
+import { SupplierOverview } from './purchasing';
 type RecordItem = {
   id: string;
   name: string;
@@ -154,6 +155,7 @@ export default function References({ suppliers = false }: { suppliers?: boolean 
   const [editing, setEditing] = useState<RecordItem | null | undefined>(undefined),
     [search, setSearch] = useState(''),
     [saved, setSaved] = useState(false);
+  const [supplierDetails, setSupplierDetails] = useState<string | null>(null);
   const key = suppliers ? 'suppliers' : 'categories';
   const editable = session?.user.role !== 'CASHIER';
   const query = useQuery({
@@ -237,6 +239,11 @@ export default function References({ suppliers = false }: { suppliers?: boolean 
                           Edit {r.name}
                         </button>
                         {suppliers && (
+                          <button className="quiet-action" onClick={() => setSupplierDetails(r.id)}>
+                            Purchases, payments & balance
+                          </button>
+                        )}
+                        {suppliers && (
                           <Link className="text-link" to={'/inventory/receipts?supplierId=' + r.id}>
                             Stock receipts
                           </Link>
@@ -268,6 +275,9 @@ export default function References({ suppliers = false }: { suppliers?: boolean 
             if (!suppliers) void client.invalidateQueries({ queryKey: ['products'] });
           }}
         />
+      )}
+      {supplierDetails && (
+        <SupplierOverview id={supplierDetails} onClose={() => setSupplierDetails(null)} />
       )}
     </>
   );

@@ -17,6 +17,7 @@ import {
 import { mainBranch, moveStock } from './operations';
 import { randomUUID } from 'node:crypto';
 import { allocateProductSku, lockProductSkus } from './product-skus';
+import { purchasingSummary } from './purchasing';
 
 export function productDto(
   product: Product & {
@@ -317,6 +318,48 @@ export function catalogueRouter(db: PrismaClient, webOrigin: WebOrigins) {
           orderBy: { name: 'asc' },
         }),
       );
+    }),
+  );
+  router.get(
+    '/suppliers/:id/financial',
+    adminRead,
+    route(async (req, res) => {
+      const id = uuid.parse(req.params.id),
+        businessId = identity(res).user.businessId;
+      const page = Math.max(1, Math.min(100000, Number(req.query.page) || 1));
+      const result = await db.$transaction(
+        async (tx) => {
+          const supplier = await tx.supplier.findFirst({ where: { businessId, id } });
+          if (!supplier) throw new ApiError(404, 'NOT_FOUND', 'Supplier not found');
+          const where = { businessId, supplierId: id };
+          const summary = await purchasingSummary(
+            tx,
+            businessId,
+            new Date(0),
+            new Date('9999-01-01'),
+            id,
+          );
+          const payments = await tx.supplierPayment.findMany({
+            where,
+            include: { receipt: { select: { reference: true } } },
+            orderBy: [{ date: 'desc' }, { id: 'desc' }],
+            skip: (Math.floor(page) - 1) * 25,
+            take: 25,
+          });
+          return {
+            supplier,
+            ...summary,
+            payments: {
+              data: payments,
+              total: await tx.supplierPayment.count({ where }),
+              page: Math.floor(page),
+              limit: 25,
+            },
+          };
+        },
+        { isolationLevel: 'RepeatableRead' },
+      );
+      res.json(result);
     }),
   );
   router.post(

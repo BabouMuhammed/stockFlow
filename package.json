@@ -13,6 +13,8 @@
     "dev:web": "npm --workspace apps/web run dev",
     "build": "npm run build --workspace apps/api && npm run build --workspace apps/web",
     "test": "npm run test --workspace apps/api && npm run test --workspace apps/web",
+    "test:isolated": "tsx apps/api/scripts/test-isolated.ts",
+    "demo:local": "tsx apps/api/scripts/demo-local.ts",
     "db:generate": "npm --workspace apps/api run db:generate",
     "db:migrate": "npm --workspace apps/api run db:migrate",
     "db:seed": "npm --workspace apps/api run db:seed",

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { Boxes, X } from './icons';
 
 export function Notice({ children }: { children: ReactNode }) {
@@ -31,6 +31,7 @@ export function Dialog({
   variant?: 'modal' | 'drawer';
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const dialog = ref.current!;
     dialog.showModal();
@@ -41,10 +42,10 @@ export function Dialog({
       ref={ref}
       className={'preview-dialog ' + (variant === 'drawer' ? 'detail-drawer' : '')}
       onCancel={onClose}
-      aria-labelledby="dialog-title"
+      aria-labelledby={titleId}
     >
       <div className="modal-header">
-        <h2 id="dialog-title">{title}</h2>
+        <h2 id={titleId}>{title}</h2>
         <button className="icon-button" onClick={onClose} aria-label="Close dialog">
           <X size={20} />
         </button>

@@ -2,7 +2,9 @@
 
 StockFlow is a local retail workspace for businesses in The Gambia. It extends the existing React/Vite frontend and Express/Prisma backend with PostgreSQL-backed registration, inventory, checkout, receipts, sales returns, expenses, customer records, staff administration, settings and reports. The existing green interface and npm workspaces are retained.
 
-Production configuration and the pending Vercel/Render setup are documented in [DEPLOYMENT_READINESS.md](DEPLOYMENT_READINESS.md). Production uses exact HTTPS frontend origins, explicit trusted proxy networks, same-origin `/api/v1` forwarding and disabled image uploads until persistent storage is configured. No application has been deployed by these changes.
+Production configuration and Vercel/Render setup are documented in [DEPLOYMENT_READINESS.md](DEPLOYMENT_READINESS.md). Production uses exact HTTPS frontend origins, an explicit no-trust proxy policy or verified proxy networks, same-origin `/api/v1` forwarding and disabled image uploads until persistent storage is configured. Hosted acceptance checks remain required after deployment.
+
+Multi-product purchasing, supplier settlements, test results and the client walkthrough are documented in [Purchasing implementation](docs/PURCHASING_IMPLEMENTATION.md). The existing working prototype at http://127.0.0.1:5173 now includes these features after an approved, backed-up additive migration. For a fresh isolated local demo, run `npm run build` then `npm run demo:local` and open http://127.0.0.1:5175/register. This creates a separate database and lets you choose your own demo login. Each run creates a new demo database; earlier databases are retained.
 
 ## Local setup
 
@@ -35,7 +37,7 @@ Prisma migrations extend the existing schema without a reset. `npm run db:deploy
 
 1. Register a business. Its main store, owner, settings and authenticated cookie session are created together.
 2. Add categories and products. Enter cost/selling prices in GMD and optional opening quantities. Opening stock produces audited inventory movements.
-3. Receive subsequent deliveries through Inventory / Stock receipts, including purchase cost, reference and optional supplier. Inventory purchases are separate from operating expenses.
+3. Receive multiple purchased products through Inventory / Stock receipts with supplier, receipt date and buying prices. StockFlow generates the internal `SR-…` receipt number automatically; the supplier invoice/delivery note number is optional and separate. Open the saved receipt to record full or partial supplier payments and check the balance. Historical receipts remain unreconciled until explicitly verified. Inventory purchases and supplier payments are separate from operating expenses. See [automatic receipt references](docs/STOCK_RECEIPT_REFERENCES.md).
 4. Create a cashier under Staff with a unique email and a new password of at least 12 characters. Communicate their initial password privately.
 5. The cashier signs in, opens POS, searches by name/SKU/barcode, adds available products, reviews the cart, selects a payment method and confirms checkout.
 6. Print the receipt or choose Save as PDF in the browser print dialog. Historical receipts can be reopened through Sales history.
@@ -78,7 +80,7 @@ Financial definitions:
 - COGS: quantity sold multiplied by the product cost snapshotted at sale time; subtract cost reversals only for sellable restocked returns recorded in the period.
 - Gross profit: net revenue less that COGS.
 - Estimated operating result: gross profit less recorded operating expenses. This is not a claim of complete net profit.
-- Inventory value: current active main-store stock at the latest product purchase cost. This is not FIFO or weighted-average valuation.
+- Inventory value: current main-store stock, including archived products, at the latest product purchase cost. This remains an estimate, not FIFO or weighted-average valuation. Weighted-average arithmetic is experimental and inactive pending opening-value reconciliation.
 
 Charts for product/category/cashier sales show sales before returns; category grouping uses current catalogue categories. Sales CSV includes cumulative refunds per sale, while financial summary reports apply refunds by return date. Top-product/category/cashier panels show up to 25 groups; CSV exports page through the full matching dataset server-side. Product, inventory, sales, customer, expense and movement lists have bounded pagination. Reference category/supplier and staff lists currently return their directory without pagination.
 

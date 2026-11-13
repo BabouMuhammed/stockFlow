@@ -1687,6 +1687,31 @@ strong {
   margin-top: 22px;
   max-width: 540px;
 }
+
+.purchase-lines {
+  min-width: 0;
+  border: 1px solid var(--border, #dfe5e2);
+  border-radius: 10px;
+  padding: 16px;
+  display: grid;
+  gap: 16px;
+}
+.purchase-line {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  border-bottom: 1px solid var(--border, #dfe5e2);
+  padding-bottom: 16px;
+}
+.purchase-line p,
+.purchase-total {
+  margin: 0;
+}
+.purchase-total {
+  padding: 12px;
+  background: #eef8f1;
+  border-radius: 8px;
+}
 .settings-form > .button {
   justify-self: start;
 }

@@ -20,6 +20,12 @@ type Summary = {
   products: string;
   lowStock: string;
   valueMinor: string;
+  purchasesMinor?: string;
+  supplierPaymentsMinor?: string;
+  outstandingSupplierMinor?: string;
+  unreconciledPurchaseMinor?: string;
+  unreconciledPurchases?: string;
+  suspectExpenseCount?: number;
   trends: { day: string; revenueMinor: string; costMinor: string }[];
   productsSold?: never;
   categories: { name: string; revenueMinor: string }[];
@@ -75,7 +81,8 @@ function groupTrend(rows: Summary['trends'], interval: string) {
   }));
 }
 function Bars({ rows, label }: { rows: { label: string; value: string }[]; label: string }) {
-  const max = rows.reduce((m, r) => (BigInt(r.value) > m ? BigInt(r.value) : m), 1n);
+  const absolute = (value: string) => (BigInt(value) < 0n ? -BigInt(value) : BigInt(value));
+  const max = rows.reduce((m, r) => (absolute(r.value) > m ? absolute(r.value) : m), 1n);
   return (
     <div className="data-bars" aria-label={label}>
       {!rows.length ? (
@@ -85,7 +92,12 @@ function Bars({ rows, label }: { rows: { label: string; value: string }[]; label
           <div className="data-bar" key={i}>
             <span>{r.label}</span>
             <div>
-              <i style={{ width: String((BigInt(r.value) * 100n) / max) + '%' }} />
+              <i
+                style={{
+                  width: String((absolute(r.value) * 100n) / max) + '%',
+                  ...(BigInt(r.value) < 0n ? { background: '#b42318' } : {}),
+                }}
+              />
             </div>
             <strong>{formatMoney(r.value)}</strong>
           </div>
@@ -218,19 +230,23 @@ export default function Reports({ dashboard = false }: { dashboard?: boolean }) 
         <>
           <div className="stats-grid">
             {[
-              ['Sales revenue', formatMoney(data.revenueMinor), 'Completed sales before returns'],
+              [
+                'Sales revenue',
+                formatMoney(data.netRevenueMinor),
+                'Completed sales less refunds recorded in period',
+              ],
               ['Transactions', data.transactions, 'Completed sales in period'],
               ['Active products', data.products, 'Current catalogue'],
               ['Low-stock products', data.lowStock, 'Current main-store stock'],
               [
                 'Inventory value',
                 formatMoney(data.valueMinor),
-                'Current stock at latest product cost',
+                'Estimated current value at latest cost, including archived stock',
               ],
               [
                 'Operating expenses',
                 formatMoney(data.expensesMinor),
-                'Recorded in period; stock purchases excluded',
+                'Recorded expense entries; review any misclassified purchases',
               ],
               [
                 'Gross profit',
@@ -242,6 +258,27 @@ export default function Reports({ dashboard = false }: { dashboard?: boolean }) 
                 formatMoney(data.estimatedOperatingResultMinor),
                 'Gross profit less recorded operating expenses',
               ],
+              [
+                'Inventory purchased',
+                formatMoney(data.purchasesMinor ?? '0'),
+                'Value received in period; not an operating expense',
+              ],
+              [
+                'Supplier payments',
+                formatMoney(data.supplierPaymentsMinor ?? '0'),
+                'Recorded payment dates, less reversals; not deducted from profit',
+              ],
+              [
+                'Supplier balances',
+                formatMoney(data.outstandingSupplierMinor ?? '0'),
+                'Current verified outstanding amount; not period-end balance',
+              ],
+              [
+                'Unreconciled purchases',
+                data.unreconciledPurchases ?? '0',
+                formatMoney(data.unreconciledPurchaseMinor ?? '0') +
+                  ' purchase value; payment history unknown',
+              ],
             ].map(([label, value, note]) => (
               <SummaryCard key={label} label={label} value={value} note={note}>
                 <span aria-hidden="true">D</span>
@@ -251,8 +288,16 @@ export default function Reports({ dashboard = false }: { dashboard?: boolean }) 
           <Notice>
             Refunds recorded in this period: {formatMoney(data.refundMinor)}. Net revenue:{' '}
             {formatMoney(data.netRevenueMinor)}. COGS: {formatMoney(data.cogsMinor)}. The operating
-            result includes only costs recorded in StockFlow.
+            result includes only costs recorded in StockFlow. Inventory values use the latest
+            recorded cost, and COGS uses the cost saved at each sale. Older stock costs may differ,
+            so profit figures remain estimates.
           </Notice>
+          {!!data.suspectExpenseCount && (
+            <Notice>
+              {data.suspectExpenseCount} expense entries may need classification review. Historical
+              records remain included until explicitly corrected.
+            </Notice>
+          )}
           <div className="dashboard-grid">
             <section className="panel overview-panel">
               <h2>Sales trends</h2>
@@ -264,10 +309,10 @@ export default function Reports({ dashboard = false }: { dashboard?: boolean }) 
                 </select>
               </Field>
               <Bars
-                label="Sales revenue"
+                label="Net sales revenue"
                 rows={trends.map((t) => ({ label: t.label, value: t.revenueMinor }))}
               />
-              <h3>Cost of goods sold before returns</h3>
+              <h3>Cost of goods sold after restocked returns</h3>
               <Bars
                 label="Daily cost of goods sold"
                 rows={trends.map((t) => ({ label: t.label, value: t.costMinor }))}
@@ -312,7 +357,7 @@ export default function Reports({ dashboard = false }: { dashboard?: boolean }) 
               formatMoney(s.totalMinor),
             ])}
           />
-          <h2>Best-selling products (before returns)</h2>
+          <h2>Product performance after returns</h2>
           <Bars
             label="Top product revenue"
             rows={(data.bestProducts ?? [])
@@ -350,6 +395,8 @@ export default function Reports({ dashboard = false }: { dashboard?: boolean }) 
                       ['expenses', 'Operating expenses'],
                       ['cashiers', 'Cashier performance'],
                       ['gross-profit', 'Gross profit and operating result'],
+                      ['purchases', 'Inventory purchases (receipt dates)'],
+                      ['supplier-payments', 'Supplier payments and reversals (payment dates)'],
                     ].map(([v, l]) => (
                       <option key={v} value={v}>
                         {l}

@@ -5,6 +5,7 @@ import { formatMoney, parseMoneyInput } from '@stockflow/shared';
 import { request } from '../api';
 import { Dialog, Notice } from '../components/ui';
 import { type ProductList } from './catalogue';
+import { PurchaseForm, PurchaseTable, ReceiptDetail, type PurchaseReceipt } from './purchasing';
 import {
   DataTable,
   ErrorMessage,
@@ -32,13 +33,6 @@ type Movement = {
   reason: string;
   actorId: string;
   createdAt: string;
-};
-type StockReceipt = {
-  id: string;
-  reference: string;
-  supplierName: string | null;
-  createdAt: string;
-  items: { productName: string; quantity: string; unitCostMinor: string }[];
 };
 function StockForm({ receiving, onClose }: { receiving: boolean; onClose: () => void }) {
   const client = useQueryClient(),
@@ -162,6 +156,9 @@ export default function Inventory() {
     [low, setLow] = useState(false),
     [page, setPage] = useState(1),
     [form, setForm] = useState<'receive' | 'adjust' | null>(null);
+  const [openedReceipt, setOpenedReceipt] = useState<string | null>(null);
+  const [from, setFrom] = useState(''),
+    [to, setTo] = useState('');
   const searchValue = useDebounced(search);
   const stock = useData<Page<Stock>>(
     'inventory',
@@ -180,9 +177,9 @@ export default function Inventory() {
     movements,
   );
   const supplierId = new URLSearchParams(location.search).get('supplierId');
-  const received = useData<Page<StockReceipt>>(
+  const received = useData<Page<PurchaseReceipt>>(
     'receipts',
-    `/inventory/receipts?search=${encodeURIComponent(searchValue)}&page=${page}${supplierId ? '&supplierId=' + encodeURIComponent(supplierId) : ''}`,
+    `/inventory/receipts?search=${encodeURIComponent(searchValue)}&page=${page}${supplierId ? '&supplierId=' + encodeURIComponent(supplierId) : ''}${from ? '&from=' + from : ''}${to ? '&to=' + to : ''}`,
     receipts,
   );
   const query = receipts ? received : movements ? history : stock;
@@ -226,6 +223,30 @@ export default function Inventory() {
             Low stock only
           </label>
         )}
+        {receipts && (
+          <>
+            <Field
+              label="Received from"
+              type="date"
+              value={from}
+              required={false}
+              onChange={(v) => {
+                setFrom(v);
+                setPage(1);
+              }}
+            />
+            <Field
+              label="Received to"
+              type="date"
+              value={to}
+              required={false}
+              onChange={(v) => {
+                setTo(v);
+                setPage(1);
+              }}
+            />
+          </>
+        )}
       </div>
       <Feedback query={query} />
       {movements && (
@@ -236,17 +257,7 @@ export default function Inventory() {
       {!query.error &&
         !query.isPending &&
         (receipts ? (
-          <DataTable
-            columns={['Reference', 'Supplier', 'Products', 'Date']}
-            rows={(received.data?.data ?? []).map((r) => [
-              r.reference,
-              r.supplierName ?? '—',
-              r.items
-                .map((i) => `${i.productName}: ${i.quantity} at ${formatMoney(i.unitCostMinor)}`)
-                .join(', '),
-              new Date(r.createdAt).toLocaleString('en-GB', { timeZone: 'Africa/Banjul' }),
-            ])}
-          />
+          <PurchaseTable receipts={received.data?.data ?? []} onOpen={setOpenedReceipt} />
         ) : movements ? (
           <DataTable
             columns={[
@@ -283,7 +294,14 @@ export default function Inventory() {
           />
         ))}
       {query.data && <Pager page={page} total={query.data.total} onChange={setPage} />}{' '}
-      {form && <StockForm receiving={form === 'receive'} onClose={() => setForm(null)} />}
+      {form === 'receive' && (
+        <PurchaseForm
+          onClose={() => setForm(null)}
+          onSaved={(receipt) => setOpenedReceipt(receipt.id)}
+        />
+      )}
+      {form === 'adjust' && <StockForm receiving={false} onClose={() => setForm(null)} />}
+      {openedReceipt && <ReceiptDetail id={openedReceipt} onClose={() => setOpenedReceipt(null)} />}
     </>
   );
 }

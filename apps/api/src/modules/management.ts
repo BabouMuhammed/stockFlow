@@ -410,6 +410,7 @@ export function managementRouter(db: PrismaClient, origin: WebOrigins) {
     route(async (req, res) => {
       const input = expenseInput.parse(req.body),
         auth = identity(res);
+      validateOperatingCategory(input.category);
       const expense = await db.$transaction(async (tx) => {
         const e = await tx.expense.create({
           data: {
@@ -439,6 +440,7 @@ export function managementRouter(db: PrismaClient, origin: WebOrigins) {
             where: { id, businessId: auth.user.businessId },
           });
           if (!previous) throw new ApiError(404, 'NOT_FOUND', 'Expense not found');
+          if (input.category !== previous.category) validateOperatingCategory(input.category);
           const changed = await tx.expense.update({
             where: { id },
             data: { ...input, date: new Date(input.date + 'T00:00:00Z') },
@@ -460,4 +462,17 @@ export function managementRouter(db: PrismaClient, origin: WebOrigins) {
     }),
   );
   return router;
+}
+
+export function validateOperatingCategory(category: string) {
+  if (
+    /^(inventory|stock|supplier)\s*(purchases?|payments?|settlements?)$|^(purchases?|cost of goods sold|cogs)$/i.test(
+      category.trim(),
+    )
+  )
+    throw new ApiError(
+      400,
+      'INVENTORY_NOT_OPERATING_EXPENSE',
+      'Use Stock receipts and supplier payments for inventory purchases, not operating expenses',
+    );
 }

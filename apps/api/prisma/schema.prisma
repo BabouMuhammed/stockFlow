@@ -45,19 +45,19 @@ enum CountStatus {
 }
 
 model Business {
-  id                       String             @id @default(uuid()) @db.Uuid
+  id                       String               @id @default(uuid()) @db.Uuid
   name                     String
   phone                    String?
   address                  String?
   email                    String?
-  receiptHeader            String             @default("")
-  receiptFooter            String             @default("Thank you for shopping with us.")
-  timezone                 String             @default("Africa/Banjul")
-  defaultLowStockThreshold Decimal            @default(5) @db.Decimal(18, 3)
-  currency                 String             @default("GMD")
-  isDemo                   Boolean            @default(false)
-  createdAt                DateTime           @default(now())
-  updatedAt                DateTime           @updatedAt
+  receiptHeader            String               @default("")
+  receiptFooter            String               @default("Thank you for shopping with us.")
+  timezone                 String               @default("Africa/Banjul")
+  defaultLowStockThreshold Decimal              @default(5) @db.Decimal(18, 3)
+  currency                 String               @default("GMD")
+  isDemo                   Boolean              @default(false)
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
   branches                 Branch[]
   users                    User[]
   sessions                 UserSession[]
@@ -78,9 +78,17 @@ model Business {
   expenses                 Expense[]
   returns                  SaleReturn[]
   productSkuCounter        ProductSkuCounter?
+  stockReceiptCounter      StockReceiptCounter?
+  supplierPayments         SupplierPayment[]
 }
 
 model ProductSkuCounter {
+  businessId String   @id @db.Uuid
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  nextValue  BigInt   @default(1)
+}
+
+model StockReceiptCounter {
   businessId String   @id @db.Uuid
   business   Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
   nextValue  BigInt   @default(1)
@@ -105,25 +113,26 @@ model Branch {
 }
 
 model User {
-  id              String          @id @default(uuid()) @db.Uuid
-  businessId      String          @db.Uuid
-  business        Business        @relation(fields: [businessId], references: [id], onDelete: Restrict)
-  email           String
-  name            String
-  passwordHash    String
-  role            Role
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  sessions        UserSession[]
-  auditLogs       AuditLog[]
-  submittedCounts StockCount[]    @relation("CountSubmitter")
-  approvedCounts  StockCount[]    @relation("CountApprover")
-  stockReceipts   StockReceipt[]
-  stockMovements  StockMovement[]
-  sales           Sale[]
-  expenses        Expense[]
-  returns         SaleReturn[]
+  id               String            @id @default(uuid()) @db.Uuid
+  businessId       String            @db.Uuid
+  business         Business          @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  email            String
+  name             String
+  passwordHash     String
+  role             Role
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  sessions         UserSession[]
+  auditLogs        AuditLog[]
+  submittedCounts  StockCount[]      @relation("CountSubmitter")
+  approvedCounts   StockCount[]      @relation("CountApprover")
+  stockReceipts    StockReceipt[]
+  stockMovements   StockMovement[]
+  sales            Sale[]
+  expenses         Expense[]
+  returns          SaleReturn[]
+  supplierPayments SupplierPayment[]
 
   @@unique([businessId, id])
   @@unique([businessId, email])
@@ -190,20 +199,21 @@ model Product {
 }
 
 model Supplier {
-  id            String         @id @default(uuid()) @db.Uuid
-  businessId    String         @db.Uuid
-  business      Business       @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  id            String            @id @default(uuid()) @db.Uuid
+  businessId    String            @db.Uuid
+  business      Business          @relation(fields: [businessId], references: [id], onDelete: Restrict)
   name          String
   phone         String?
   contactPerson String?
   email         String?
-  notes         String         @default("")
+  notes         String            @default("")
   address       String?
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
   receipts      StockReceipt[]
   products      Product[]
+  payments      SupplierPayment[]
 
   @@unique([businessId, id])
   @@index([businessId, name])
@@ -224,26 +234,69 @@ model StockLevel {
 }
 
 model StockReceipt {
-  id             String             @id @default(uuid()) @db.Uuid
-  businessId     String             @db.Uuid
-  business       Business           @relation(fields: [businessId], references: [id], onDelete: Restrict)
-  branchId       String             @db.Uuid
-  branch         Branch             @relation(fields: [businessId, branchId], references: [businessId, id], onDelete: Restrict)
-  supplierId     String?            @db.Uuid
-  supplier       Supplier?          @relation(fields: [businessId, supplierId], references: [businessId, id], onDelete: Restrict)
-  supplierName   String?
-  reference      String
-  idempotencyKey String
-  requestHash    String?
-  actorId        String?            @db.Uuid
-  actor          User?              @relation(fields: [businessId, actorId], references: [businessId, id], onDelete: Restrict)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  items          StockReceiptItem[]
+  id                       String             @id @default(uuid()) @db.Uuid
+  businessId               String             @db.Uuid
+  business                 Business           @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  branchId                 String             @db.Uuid
+  branch                   Branch             @relation(fields: [businessId, branchId], references: [businessId, id], onDelete: Restrict)
+  supplierId               String?            @db.Uuid
+  supplier                 Supplier?          @relation(fields: [businessId, supplierId], references: [businessId, id], onDelete: Restrict)
+  supplierName             String?
+  reference                String
+  internalReference        String?
+  supplierInvoiceReference String?
+  idempotencyKey           String
+  requestHash              String?
+  actorId                  String?            @db.Uuid
+  actor                    User?              @relation(fields: [businessId, actorId], references: [businessId, id], onDelete: Restrict)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  items                    StockReceiptItem[]
+  receivedAt               DateTime?
+  notes                    String             @default("")
+  settlementKnown          Boolean            @default(false)
+  reconciliationKey        String?
+  reconciliationHash       String?
+  payments                 SupplierPayment[]
 
   @@unique([businessId, id])
   @@unique([businessId, idempotencyKey])
+  @@unique([businessId, id, supplierId])
+  @@unique([businessId, reconciliationKey])
+  @@unique([businessId, internalReference])
+  @@index([businessId, supplierId, supplierInvoiceReference])
   @@index([businessId, branchId, createdAt])
+}
+
+// Append-only outgoing settlements. A reversal retains and offsets its original entry.
+model SupplierPayment {
+  id             String            @id @default(uuid()) @db.Uuid
+  businessId     String            @db.Uuid
+  business       Business          @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  receiptId      String            @db.Uuid
+  supplierId     String            @db.Uuid
+  receipt        StockReceipt      @relation(fields: [businessId, receiptId, supplierId], references: [businessId, id, supplierId], onDelete: Restrict, map: "SupplierPayment_receipt_fkey")
+  supplier       Supplier          @relation(fields: [businessId, supplierId], references: [businessId, id], onDelete: Restrict, map: "SupplierPayment_supplier_fkey")
+  amountMinor    BigInt
+  date           DateTime
+  method         PaymentMethod
+  reference      String?
+  notes          String            @default("")
+  actorId        String            @db.Uuid
+  actor          User              @relation(fields: [businessId, actorId], references: [businessId, id], onDelete: Restrict, map: "SupplierPayment_actor_fkey")
+  idempotencyKey String
+  requestHash    String
+  createdAt      DateTime          @default(now())
+  reversalOfId   String?           @db.Uuid
+  reversalOf     SupplierPayment?  @relation("SupplierReversals", fields: [businessId, receiptId, supplierId, reversalOfId], references: [businessId, receiptId, supplierId, id], onDelete: Restrict, map: "SupplierPayment_reversal_fkey")
+  reversals      SupplierPayment[] @relation("SupplierReversals")
+
+  @@unique([businessId, id])
+  @@unique([businessId, receiptId, supplierId, id])
+  @@unique([businessId, reversalOfId])
+  @@unique([businessId, idempotencyKey])
+  @@index([businessId, supplierId, date])
+  @@index([businessId, receiptId])
 }
 
 model StockReceiptItem {

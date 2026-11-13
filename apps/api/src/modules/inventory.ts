@@ -4,7 +4,16 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { identity } from '../security/session';
 import { ApiError, route } from '../utils/http';
-import { decimalQuantity, minorUnits, text, uuid } from '../utils/validation';
+import { decimalQuantity, text, uuid } from '../utils/validation';
+import { allocateStockReceiptReference } from './stock-receipt-references';
+import {
+  purchaseTotal,
+  receiptAmounts,
+  receiptView,
+  receiveInput,
+  recordedDate,
+  settlementInput,
+} from './purchasing';
 import {
   audit,
   checkReplay,
@@ -13,6 +22,7 @@ import {
   mainBranch,
   moveStock,
   operators,
+  ownerOnly,
   protectedRouter,
   serial,
 } from './operations';
@@ -29,16 +39,6 @@ const positiveQuantity = decimalQuantity.refine(
   (v) => new Prisma.Decimal(v).gt(0),
   'Quantity must be positive',
 );
-const receiveInput = z
-  .object({
-    productId: uuid,
-    quantity: positiveQuantity,
-    unitCostMinor: minorUnits,
-    supplierId: uuid.optional(),
-    reference: text(120),
-    idempotencyKey: uuid,
-  })
-  .strict();
 const adjustmentInput = z
   .object({
     productId: uuid,
@@ -127,25 +127,39 @@ export function inventoryRouter(db: PrismaClient, origin: WebOrigins) {
     route(async (req, res) => {
       const input = stockQuery
           .omit({ low: true })
-          .extend({ supplierId: uuid.optional() })
+          .extend({
+            supplierId: uuid.optional(),
+            from: z.iso.date().optional(),
+            to: z.iso.date().optional(),
+          })
           .parse(req.query),
         businessId = identity(res).user.businessId;
       const where = {
         businessId,
-        reference: { contains: input.search, mode: 'insensitive' as const },
+        AND: [
+          {
+            OR: [
+              { reference: { contains: input.search, mode: 'insensitive' as const } },
+              {
+                supplierInvoiceReference: { contains: input.search, mode: 'insensitive' as const },
+              },
+            ],
+          },
+        ],
         ...(input.supplierId ? { supplierId: input.supplierId } : {}),
+        ...receiptDates(input.from, input.to),
       };
       const [data, total] = await db.$transaction([
         db.stockReceipt.findMany({
           where,
-          include: { items: true },
+          include: { items: true, payments: true },
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
           skip: (input.page - 1) * input.limit,
           take: input.limit,
         }),
         db.stockReceipt.count({ where }),
       ]);
-      res.json({ data, total, page: input.page, limit: input.limit });
+      res.json({ data: data.map(receiptView), total, page: input.page, limit: input.limit });
     }),
   );
   router.post(
@@ -161,16 +175,18 @@ export function inventoryRouter(db: PrismaClient, origin: WebOrigins) {
           where: {
             businessId_idempotencyKey: { businessId, idempotencyKey: input.idempotencyKey },
           },
-          include: { items: true },
+          include: { items: true, payments: true },
         });
         if (previous) {
           checkReplay(previous, hash);
           return previous;
         }
-        const product = await tx.product.findFirst({
-          where: { id: input.productId, businessId, isActive: true },
+        const products = await tx.product.findMany({
+          where: { id: { in: input.items.map((i) => i.productId) }, businessId, isActive: true },
         });
-        if (!product) throw new ApiError(404, 'NOT_FOUND', 'Active product not found');
+        if (products.length !== input.items.length)
+          throw new ApiError(404, 'NOT_FOUND', 'An active product was not found');
+        purchaseTotal(input.items);
         const supplier = input.supplierId
           ? await tx.supplier.findFirst({
               where: { id: input.supplierId, businessId, isActive: true },
@@ -178,47 +194,279 @@ export function inventoryRouter(db: PrismaClient, origin: WebOrigins) {
           : null;
         if (input.supplierId && !supplier)
           throw new ApiError(404, 'NOT_FOUND', 'Supplier not found');
+        const supplierInvoiceReference = input.supplierInvoiceReference || input.reference || null;
+        if (supplier && supplierInvoiceReference) {
+          await lockKey(
+            tx,
+            businessId,
+            'invoice:' + supplier.id + ':' + supplierInvoiceReference.toLowerCase(),
+          );
+          if (
+            !input.repeatReferenceReason &&
+            (await tx.stockReceipt.findFirst({
+              where: {
+                businessId,
+                supplierId: supplier.id,
+                OR: [
+                  {
+                    supplierInvoiceReference: {
+                      equals: supplierInvoiceReference,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    internalReference: null,
+                    reference: { equals: supplierInvoiceReference, mode: 'insensitive' },
+                  },
+                ],
+              },
+            }))
+          )
+            throw new ApiError(
+              409,
+              'DUPLICATE_REFERENCE',
+              'This supplier reference already exists. For a repeat delivery, provide a reason.',
+            );
+        }
         const branchId = await mainBranch(tx, businessId);
+        const internalReference = await allocateStockReceiptReference(tx, businessId);
         const created = await tx.stockReceipt.create({
           data: {
             businessId,
             branchId,
             supplierId: supplier?.id,
             supplierName: supplier?.name,
-            reference: input.reference,
+            reference: internalReference,
+            internalReference,
+            supplierInvoiceReference,
             idempotencyKey: input.idempotencyKey,
             requestHash: hash,
             actorId: auth.user.id,
+            receivedAt: input.receivedDate
+              ? new Date(input.receivedDate + 'T00:00:00Z')
+              : new Date(),
+            notes: input.notes,
+            settlementKnown: !!supplier,
             items: {
-              create: {
-                productId: product.id,
-                productName: product.name,
-                quantity: input.quantity,
-                unitCostMinor: input.unitCostMinor,
-              },
+              create: input.items.map((i) => ({
+                productId: i.productId,
+                productName: products.find((p) => p.id === i.productId)!.name,
+                quantity: i.quantity,
+                unitCostMinor: i.unitCostMinor,
+              })),
             },
           },
-          include: { items: true },
+          include: { items: true, payments: true },
         });
-        await moveStock(
-          tx,
-          auth,
-          branchId,
-          product.id,
-          new Prisma.Decimal(input.quantity),
-          'RECEIPT',
-          'StockReceipt',
-          created.id,
-          input.reference,
-        );
-        await tx.product.update({
-          where: { id: product.id },
-          data: { purchaseCostMinor: input.unitCostMinor },
+        for (const item of input.items
+          .slice()
+          .sort((a, b) => a.productId.localeCompare(b.productId))) {
+          await moveStock(
+            tx,
+            auth,
+            branchId,
+            item.productId,
+            new Prisma.Decimal(item.quantity),
+            'RECEIPT',
+            'StockReceipt',
+            created.id,
+            internalReference,
+          );
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { purchaseCostMinor: item.unitCostMinor },
+          });
+        }
+        await audit(tx, auth, 'STOCK_RECEIVE', 'StockReceipt', created.id, {
+          repeatReferenceReason: input.repeatReferenceReason ?? null,
+          internalReference,
+          supplierInvoiceReference,
         });
-        await audit(tx, auth, 'STOCK_RECEIVE', 'StockReceipt', created.id);
         return created;
       });
-      res.status(201).json(receipt);
+      res.status(201).json(receiptView(receipt));
+    }),
+  );
+  router.get(
+    '/receipts/:id',
+    route(async (req, res) => {
+      const receipt = await db.stockReceipt.findFirst({
+        where: {
+          id: uuid.parse(req.params.id),
+          businessId: identity(res).user.businessId,
+        },
+        include: { items: true, payments: { orderBy: [{ date: 'asc' }, { createdAt: 'asc' }] } },
+      });
+      if (!receipt) throw new ApiError(404, 'NOT_FOUND', 'Receipt not found');
+      res.json(receiptView(receipt));
+    }),
+  );
+  router.post(
+    '/receipts/:id/payments',
+    route(async (req, res) => {
+      const input = settlementInput.parse(req.body),
+        auth = identity(res),
+        businessId = auth.user.businessId;
+      const receiptId = uuid.parse(req.params.id),
+        hash = fingerprint({ ...input, receiptId });
+      const payment = await serial(db, async (tx) => {
+        await lockKey(tx, businessId, 'supplier-payment:' + input.idempotencyKey);
+        const previous = await tx.supplierPayment.findUnique({
+          where: {
+            businessId_idempotencyKey: { businessId, idempotencyKey: input.idempotencyKey },
+          },
+        });
+        if (previous) {
+          checkReplay(previous, hash);
+          return previous;
+        }
+        await lockKey(tx, businessId, 'receipt-settlement:' + receiptId);
+        const receipt = await tx.stockReceipt.findFirst({
+          where: { businessId, id: receiptId },
+          include: { items: true, payments: true },
+        });
+        if (!receipt) throw new ApiError(404, 'NOT_FOUND', 'Receipt not found');
+        if (!receipt.supplierId)
+          throw new ApiError(
+            409,
+            'SUPPLIER_REQUIRED',
+            'This legacy receipt has no supplier; its provenance must be reconciled first',
+          );
+        const amounts = receiptAmounts(receipt);
+        if (input.amountMinor > amounts.totalMinor - amounts.paidMinor)
+          throw new ApiError(400, 'OVERPAYMENT', 'Payment exceeds the remaining purchase value');
+        const created = await tx.supplierPayment.create({
+          data: {
+            businessId,
+            receiptId,
+            supplierId: receipt.supplierId,
+            actorId: auth.user.id,
+            amountMinor: input.amountMinor,
+            date: new Date(input.date + 'T00:00:00Z'),
+            method: input.method,
+            reference: input.reference,
+            notes: input.notes,
+            idempotencyKey: input.idempotencyKey,
+            requestHash: hash,
+          },
+        });
+        await audit(tx, auth, 'SUPPLIER_PAYMENT', 'SupplierPayment', created.id, { receiptId });
+        return created;
+      });
+      res.status(201).json(payment);
+    }),
+  );
+  router.post(
+    '/payments/:id/reverse',
+    route(async (req, res) => {
+      const input = z
+        .object({
+          date: recordedDate,
+          reason: text(240),
+          idempotencyKey: uuid,
+          confirmed: z.literal(true),
+        })
+        .strict()
+        .parse(req.body);
+      const id = uuid.parse(req.params.id),
+        auth = identity(res),
+        businessId = auth.user.businessId;
+      const hash = fingerprint({ ...input, reversalOfId: id });
+      const reversal = await serial(db, async (tx) => {
+        await lockKey(tx, businessId, 'supplier-payment:' + input.idempotencyKey);
+        const previous = await tx.supplierPayment.findUnique({
+          where: {
+            businessId_idempotencyKey: { businessId, idempotencyKey: input.idempotencyKey },
+          },
+        });
+        if (previous) {
+          checkReplay(previous, hash);
+          return previous;
+        }
+        const original = await tx.supplierPayment.findFirst({ where: { businessId, id } });
+        if (!original) throw new ApiError(404, 'NOT_FOUND', 'Payment not found');
+        await lockKey(tx, businessId, 'receipt-settlement:' + original.receiptId);
+        if (
+          original.reversalOfId ||
+          (await tx.supplierPayment.findFirst({ where: { businessId, reversalOfId: id } }))
+        )
+          throw new ApiError(409, 'ALREADY_REVERSED', 'This entry cannot be reversed again');
+        const date = new Date(input.date + 'T00:00:00Z');
+        if (date < original.date)
+          throw new ApiError(400, 'INVALID_DATE', 'A reversal cannot predate its payment');
+        const created = await tx.supplierPayment.create({
+          data: {
+            businessId,
+            receiptId: original.receiptId,
+            supplierId: original.supplierId,
+            actorId: auth.user.id,
+            amountMinor: original.amountMinor,
+            method: original.method,
+            date,
+            notes: input.reason,
+            reversalOfId: id,
+            idempotencyKey: input.idempotencyKey,
+            requestHash: hash,
+          },
+        });
+        await audit(tx, auth, 'SUPPLIER_PAYMENT_REVERSE', 'SupplierPayment', created.id, {
+          reversalOfId: id,
+          reason: input.reason,
+        });
+        return created;
+      });
+      res.status(201).json(reversal);
+    }),
+  );
+  router.post(
+    '/receipts/:id/reconcile',
+    ownerOnly,
+    route(async (req, res) => {
+      const input = z
+        .object({
+          confirmAllPaymentsRecorded: z.literal(true),
+          reason: text(240),
+          idempotencyKey: uuid,
+        })
+        .strict()
+        .parse(req.body);
+      const auth = identity(res),
+        businessId = auth.user.businessId,
+        id = uuid.parse(req.params.id);
+      const hash = fingerprint({ ...input, id });
+      const result = await serial(db, async (tx) => {
+        await lockKey(tx, businessId, 'receipt-settlement:' + id);
+        const receipt = await tx.stockReceipt.findFirst({
+          where: { businessId, id },
+          include: { items: true, payments: true },
+        });
+        if (!receipt) throw new ApiError(404, 'NOT_FOUND', 'Receipt not found');
+        if (receipt.reconciliationKey === input.idempotencyKey) {
+          checkReplay({ requestHash: receipt.reconciliationHash }, hash);
+          return receipt;
+        }
+        if (receipt.settlementKnown || !receipt.supplierId)
+          throw new ApiError(
+            409,
+            'RECONCILIATION_UNAVAILABLE',
+            'Only unreconciled supplier receipts can be confirmed',
+          );
+        receiptAmounts(receipt);
+        const updated = await tx.stockReceipt.update({
+          where: { id },
+          data: {
+            settlementKnown: true,
+            reconciliationKey: input.idempotencyKey,
+            reconciliationHash: hash,
+          },
+          include: { items: true, payments: true },
+        });
+        await audit(tx, auth, 'SUPPLIER_RECEIPT_RECONCILE', 'StockReceipt', id, {
+          reason: input.reason,
+        });
+        return updated;
+      });
+      res.json(receiptView(result));
     }),
   );
   router.post(
@@ -275,4 +523,14 @@ export function inventoryRouter(db: PrismaClient, origin: WebOrigins) {
     }),
   );
   return router;
+}
+
+function receiptDates(from?: string, to?: string): Prisma.StockReceiptWhereInput {
+  if (from && to && from > to)
+    throw new ApiError(400, 'INVALID_DATE', 'Start date must not follow end date');
+  const range = {
+    ...(from ? { gte: new Date(from + 'T00:00:00Z') } : {}),
+    ...(to ? { lt: new Date(new Date(to + 'T00:00:00Z').getTime() + 86400000) } : {}),
+  };
+  return from || to ? { OR: [{ receivedAt: range }, { receivedAt: null, createdAt: range }] } : {};
 }

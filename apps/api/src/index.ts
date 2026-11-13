@@ -23,6 +23,16 @@ const app = createApp({
     if (columns[0]?.data_type !== 'bigint') throw new Error('Monetary migration pending');
     await prisma.business.findFirst({ select: { receiptHeader: true } });
     await prisma.saleReturn.count();
+    await prisma.stockReceipt.findFirst({
+      select: {
+        receivedAt: true,
+        settlementKnown: true,
+        internalReference: true,
+        supplierInvoiceReference: true,
+      },
+    });
+    await prisma.stockReceiptCounter.findFirst({ select: { businessId: true } });
+    await prisma.supplierPayment.findFirst({ select: { id: true } });
     await prisma.productSkuCounter.findFirst({ select: { businessId: true } });
     await checkImageStorage(imageStorage);
   },
