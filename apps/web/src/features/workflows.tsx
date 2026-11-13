@@ -1,10 +1,26 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ApiError, request } from '../api';
 import { useSession } from './session';
 import { QueryFeedback } from './catalogue';
 import { EmptyState } from '../components/ui';
 import { parseQuantityInput } from '@stockflow/shared';
+
+// Mutations own their error messages; the synchronous guard also blocks rapid Enter/click retries.
+export function useSubmitGuard() {
+  const busy = useRef(false);
+  return async (submit: () => Promise<unknown>) => {
+    if (busy.current) return;
+    busy.current = true;
+    try {
+      await submit();
+    } catch {
+      /* React Query exposes the error in the form. */
+    } finally {
+      busy.current = false;
+    }
+  };
+}
 
 export function useDebounced<T>(value: T, delay = 200) {
   const [settled, setSettled] = useState(value);
@@ -79,7 +95,12 @@ export function DataTable({
 }) {
   return (
     <section className="panel">
-      <div className="table-scroll">
+      <div
+        className="table-scroll"
+        tabIndex={0}
+        role="region"
+        aria-label="Records table; scroll horizontally for more columns"
+      >
         <table>
           <thead>
             <tr>

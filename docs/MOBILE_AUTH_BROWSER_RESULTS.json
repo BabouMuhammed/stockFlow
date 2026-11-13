@@ -1,0 +1,1925 @@
+{
+  "browser": "Headless Microsoft Edge (Chromium), Windows",
+  "widths": [320, 375, 390, 430, 768, 1024, 1440],
+  "fullMatrix": {
+    "results": [
+      {
+        "route": "/login",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/register",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/login",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/register",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/login",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/register",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/login",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/register",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/login",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/register",
+        "width": 768,
+        "viewport": 768,
+        "page": 753,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/login",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/register",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1009,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/login",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1425,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/register",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1425,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/dashboard",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 290
+          },
+          {
+            "width": 290,
+            "scroll": 290
+          },
+          {
+            "width": 290,
+            "scroll": 303
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 1148
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products dialog",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": {
+          "width": 282,
+          "scroll": 280,
+          "client": 280
+        },
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 1148
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 631
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 1255
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts dialog",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": {
+          "width": 282,
+          "scroll": 280,
+          "client": 280
+        },
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 1255
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/counts",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 1038
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 779
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers dialog",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": {
+          "width": 282,
+          "scroll": 280,
+          "client": 280
+        },
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 779
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/sales",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 455
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/pos",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/expenses",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 511
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/expenses dialog",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": {
+          "width": 282,
+          "scroll": 280,
+          "client": 280
+        },
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 511
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/reports",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 290
+          },
+          {
+            "width": 290,
+            "scroll": 303
+          },
+          {
+            "width": 290,
+            "scroll": 290
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/staff",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 290,
+            "scroll": 708
+          },
+          {
+            "width": 290,
+            "scroll": 396
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/settings",
+        "width": 320,
+        "viewport": 320,
+        "page": 320,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/dashboard",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 345
+          },
+          {
+            "width": 345,
+            "scroll": 345
+          },
+          {
+            "width": 345,
+            "scroll": 345
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 1148
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products dialog",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": {
+          "width": 337,
+          "scroll": 335,
+          "client": 335
+        },
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 1148
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 631
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 1255
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts dialog",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": {
+          "width": 337,
+          "scroll": 335,
+          "client": 335
+        },
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 1255
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/counts",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 1038
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 779
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers dialog",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": {
+          "width": 337,
+          "scroll": 335,
+          "client": 335
+        },
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 779
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/sales",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 455
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/pos",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/expenses",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 511
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/expenses dialog",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": {
+          "width": 337,
+          "scroll": 335,
+          "client": 335
+        },
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 511
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/reports",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 345
+          },
+          {
+            "width": 345,
+            "scroll": 345
+          },
+          {
+            "width": 345,
+            "scroll": 345
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/staff",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 345,
+            "scroll": 708
+          },
+          {
+            "width": 345,
+            "scroll": 396
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/settings",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/dashboard",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 360
+          },
+          {
+            "width": 360,
+            "scroll": 360
+          },
+          {
+            "width": 360,
+            "scroll": 360
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 1148
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products dialog",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": {
+          "width": 352,
+          "scroll": 350,
+          "client": 350
+        },
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 1148
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 631
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 1255
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts dialog",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": {
+          "width": 352,
+          "scroll": 350,
+          "client": 350
+        },
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 1255
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/counts",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 1038
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 779
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers dialog",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": {
+          "width": 352,
+          "scroll": 350,
+          "client": 350
+        },
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 779
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/sales",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 455
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/pos",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/expenses",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 511
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/expenses dialog",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": {
+          "width": 352,
+          "scroll": 350,
+          "client": 350
+        },
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 511
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/reports",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 360
+          },
+          {
+            "width": 360,
+            "scroll": 360
+          },
+          {
+            "width": 360,
+            "scroll": 360
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/staff",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 360,
+            "scroll": 708
+          },
+          {
+            "width": 360,
+            "scroll": 396
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/settings",
+        "width": 390,
+        "viewport": 390,
+        "page": 390,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/dashboard",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 400
+          },
+          {
+            "width": 400,
+            "scroll": 400
+          },
+          {
+            "width": 400,
+            "scroll": 400
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 1148
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products dialog",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": {
+          "width": 392,
+          "scroll": 390,
+          "client": 390
+        },
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 1148
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 631
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 1255
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts dialog",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": {
+          "width": 392,
+          "scroll": 390,
+          "client": 390
+        },
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 1255
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/counts",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 1038
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 779
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers dialog",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": {
+          "width": 392,
+          "scroll": 390,
+          "client": 390
+        },
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 779
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/sales",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 455
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/pos",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/expenses",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 511
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/expenses dialog",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": {
+          "width": 392,
+          "scroll": 390,
+          "client": 390
+        },
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 511
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/reports",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 400
+          },
+          {
+            "width": 400,
+            "scroll": 400
+          },
+          {
+            "width": 400,
+            "scroll": 400
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/staff",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 400,
+            "scroll": 708
+          },
+          {
+            "width": 400,
+            "scroll": 400
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/settings",
+        "width": 430,
+        "viewport": 430,
+        "page": 430,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/dashboard",
+        "width": 768,
+        "viewport": 768,
+        "page": 753,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 463,
+            "scroll": 463
+          },
+          {
+            "width": 463,
+            "scroll": 463
+          },
+          {
+            "width": 463,
+            "scroll": 463
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 1090
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products dialog",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": {
+          "width": 580,
+          "scroll": 563,
+          "client": 563
+        },
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 1090
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 569
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 1099
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts dialog",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": {
+          "width": 580,
+          "scroll": 563,
+          "client": 563
+        },
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 1099
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/counts",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 912
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 759
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers dialog",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": {
+          "width": 580,
+          "scroll": 578,
+          "client": 578
+        },
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 759
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/sales",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 478
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/pos",
+        "width": 768,
+        "viewport": 768,
+        "page": 753,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/expenses",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 478
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/expenses dialog",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": {
+          "width": 580,
+          "scroll": 578,
+          "client": 578
+        },
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 478
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/reports",
+        "width": 768,
+        "viewport": 768,
+        "page": 753,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 463,
+            "scroll": 463
+          },
+          {
+            "width": 463,
+            "scroll": 463
+          },
+          {
+            "width": 463,
+            "scroll": 463
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/staff",
+        "width": 768,
+        "viewport": 768,
+        "page": 768,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 478,
+            "scroll": 634
+          },
+          {
+            "width": 478,
+            "scroll": 478
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/settings",
+        "width": 768,
+        "viewport": 768,
+        "page": 753,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/dashboard",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1009,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 719,
+            "scroll": 719
+          },
+          {
+            "width": 719,
+            "scroll": 719
+          },
+          {
+            "width": 719,
+            "scroll": 719
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1009,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 536,
+            "scroll": 1090
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products dialog",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1009,
+        "dialog": {
+          "width": 580,
+          "scroll": 563,
+          "client": 563
+        },
+        "tableScrolls": [
+          {
+            "width": 536,
+            "scroll": 1090
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 734
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 1099
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts dialog",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": {
+          "width": 580,
+          "scroll": 563,
+          "client": 563
+        },
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 1099
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/counts",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 912
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 759
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers dialog",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": {
+          "width": 580,
+          "scroll": 578,
+          "client": 578
+        },
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 759
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/sales",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 734
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/pos",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1009,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/expenses",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 734
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/expenses dialog",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": {
+          "width": 580,
+          "scroll": 578,
+          "client": 578
+        },
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 734
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/reports",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1009,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 719,
+            "scroll": 719
+          },
+          {
+            "width": 719,
+            "scroll": 719
+          },
+          {
+            "width": 719,
+            "scroll": 719
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/staff",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1024,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 734,
+            "scroll": 734
+          },
+          {
+            "width": 734,
+            "scroll": 734
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/settings",
+        "width": 1024,
+        "viewport": 1024,
+        "page": 1009,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/dashboard",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1425,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 1123,
+            "scroll": 1123
+          },
+          {
+            "width": 1123,
+            "scroll": 1123
+          },
+          {
+            "width": 1123,
+            "scroll": 1123
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1425,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 917,
+            "scroll": 1090
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/products dialog",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1425,
+        "dialog": {
+          "width": 580,
+          "scroll": 563,
+          "client": 563
+        },
+        "tableScrolls": [
+          {
+            "width": 917,
+            "scroll": 1090
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/receipts dialog",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": {
+          "width": 580,
+          "scroll": 563,
+          "client": 563
+        },
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/inventory/counts",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/suppliers dialog",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": {
+          "width": 580,
+          "scroll": 578,
+          "client": 578
+        },
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/sales",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/pos",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1425,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/expenses",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/expenses dialog",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": {
+          "width": 580,
+          "scroll": 578,
+          "client": 578
+        },
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/reports",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1425,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 1123,
+            "scroll": 1123
+          },
+          {
+            "width": 1123,
+            "scroll": 1123
+          },
+          {
+            "width": 1123,
+            "scroll": 1123
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/staff",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1440,
+        "dialog": null,
+        "tableScrolls": [
+          {
+            "width": 1138,
+            "scroll": 1138
+          },
+          {
+            "width": 1138,
+            "scroll": 1138
+          }
+        ],
+        "bad": []
+      },
+      {
+        "route": "/settings",
+        "width": 1440,
+        "viewport": 1440,
+        "page": 1425,
+        "dialog": null,
+        "tableScrolls": [],
+        "bad": []
+      },
+      {
+        "route": "/pos receipt",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": {
+          "width": 337,
+          "scroll": 335,
+          "client": 335
+        },
+        "tableScrolls": [],
+        "bad": []
+      }
+    ],
+    "failures": [],
+    "exceptions": []
+  },
+  "targetedCartAndReceipt": {
+    "results": [
+      {
+        "route": "/pos receipt",
+        "width": 375,
+        "viewport": 375,
+        "page": 375,
+        "dialog": {
+          "width": 337,
+          "scroll": 335,
+          "client": 335
+        },
+        "tableScrolls": [],
+        "bad": []
+      }
+    ],
+    "failures": [],
+    "exceptions": []
+  },
+  "notes": [
+    "Initial full matrix: 127 layout measurements; zero page/dialog width failures and runtime exceptions.",
+    "Confirmation covered all page/form widths; its additional cart-jump check exposed the sibling-selector issue.",
+    "After the CSS selector correction, targeted cart/checkout/receipt, keyboard registration, short viewport and login-refresh checks passed.",
+    "This is local isolated QA, not a hosted production or physical-device test.",
+    "Final targeted run also required the backend-confirmed registration success message before proceeding."
+  ]
+}

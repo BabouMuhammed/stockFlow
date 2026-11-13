@@ -81,9 +81,6 @@ function Workspace() {
           <section className="login-card">
             <h1>Connect to your workspace</h1>
             <QueryFeedback pending={false} error={error} retry={refresh} />
-            <Link className="text-link" to="/preview/dashboard">
-              Explore the labelled demo
-            </Link>
           </section>
         </main>
       );
@@ -152,6 +149,9 @@ function Workspace() {
         </div>
       }
     >
+      {session.registrationCompleted && (
+        <Notice>Your business has been created. Your workspace is ready.</Notice>
+      )}
       {session.business.isDemo && (
         <Notice>
           Illustrative demonstration business. Catalogue changes are saved to its local database.

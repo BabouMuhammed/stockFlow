@@ -256,7 +256,7 @@ describe('operational authentication and catalogue', () => {
   it('signs in and logs out with a CSRF header and credentialed requests', async () => {
     signedIn = false;
     setup('/login');
-    await screen.findByRole('button', { name: 'Sign in' });
+    await screen.findByRole('button', { name: 'Sign In' });
     fireEvent.change(screen.getByLabelText('Business ID (optional)'), {
       target: { value: businessId },
     });
@@ -266,10 +266,10 @@ describe('operational authentication and catalogue', () => {
     fireEvent.change(screen.getByLabelText('Password'), {
       target: { value: 'local-test-password' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
     expect(await screen.findByRole('heading', { name: 'Dashboard', level: 1 })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
-    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Sign In' })).toBeTruthy();
     const call = vi.mocked(fetch).mock.calls.find(([url]) => String(url).endsWith('/auth/logout'))!;
     expect(call[1]?.credentials).toBe('include');
     expect((call[1]?.headers as Record<string, string>)['X-CSRF-Token']).toBe('a'.repeat(64));
@@ -277,7 +277,7 @@ describe('operational authentication and catalogue', () => {
   it('shows generic login failures without entering the workspace', async () => {
     signedIn = false;
     setup('/login');
-    await screen.findByRole('button', { name: 'Sign in' });
+    await screen.findByRole('button', { name: 'Sign In' });
     fireEvent.change(screen.getByLabelText('Business ID (optional)'), {
       target: { value: businessId },
     });
@@ -285,7 +285,7 @@ describe('operational authentication and catalogue', () => {
       target: { value: 'owner@example.test' },
     });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'invalid' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
     expect(await screen.findByText('Invalid business, email or password')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
   });

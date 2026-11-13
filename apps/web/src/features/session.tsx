@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, type ReactNode } from 're
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, request, setCsrfToken } from '../api';
 export type Session = {
+  registrationCompleted?: boolean;
   user: { id: string; name: string; email: string; role: 'OWNER' | 'MANAGER' | 'CASHIER' };
   business: {
     id: string;
@@ -113,7 +114,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           await client.cancelQueries();
           client.removeQueries({ predicate: (q) => q.queryKey[0] !== 'session' });
           setCsrfToken(session.csrfToken);
-          client.setQueryData(['session'], session);
+          client.setQueryData(['session'], { ...session, registrationCompleted: true });
         },
         logout: async () => {
           await request<void>('/auth/logout', { method: 'POST', body: JSON.stringify({}) });

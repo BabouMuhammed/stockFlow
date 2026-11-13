@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatMoney, moneyInputValue, parseMoneyInput } from '@stockflow/shared';
 import { request } from '../api';
 import { Dialog, Notice } from '../components/ui';
+import PasswordField from '../components/PasswordField';
 import { useSession } from './session';
 import {
   DataTable,
@@ -131,14 +132,14 @@ export function Employees() {
                 <option value="MANAGER">Manager</option>
               </select>
             </Field>
-            <Field
+            <PasswordField
               label={
                 editing
                   ? 'New password (leave empty to keep current access)'
                   : 'Initial password (12+ characters)'
               }
               name="password"
-              type="password"
+              newPassword
               required={!editing}
             />
             {editing && (
@@ -593,8 +594,8 @@ export function SettingsPage() {
             });
           }}
         >
-          <Field label="Current password" name="currentPassword" type="password" />
-          <Field label="New password (12+ characters)" name="password" type="password" />
+          <PasswordField label="Current password" name="currentPassword" required />
+          <PasswordField label="New password" name="password" newPassword required />
           <button className="button secondary" disabled={mutation.isPending}>
             Change password
           </button>

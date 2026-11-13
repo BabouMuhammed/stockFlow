@@ -356,4 +356,52 @@ describe('HTTPS authentication, CORS and image safety without database writes', 
       await rm(directory, { recursive: true, force: true });
     }
   });
+  it.each([
+    'abcdefghijkl',
+    'my shop is open',
+    '  my shop is open  ',
+    'a'.repeat(64),
+    'a'.repeat(128),
+    'é'.repeat(12),
+  ])('accepts a passphrase without composition requirements or alteration', async (password) => {
+    const { db, methods } = authDatabase(passwordHash);
+    await request(makeApp(db))
+      .post('/api/v1/auth/register')
+      .set('Origin', origin)
+      .send({
+        businessName: 'Test shop',
+        name: 'Owner',
+        email: 'new@example.test',
+        phone: '12345678',
+        password,
+        passwordConfirmation: password,
+      })
+      .expect(201);
+    const saved = methods.user.create.mock.calls[0] as unknown as [
+      { data: { passwordHash: string } },
+    ];
+    const { verifyPassword } = await import('../security/password');
+    expect(await verifyPassword(password, saved[0].data.passwordHash)).toBe(true);
+    if (password.startsWith(' '))
+      expect(await verifyPassword(password.trim(), saved[0].data.passwordHash)).toBe(false);
+  });
+  it.each(['a'.repeat(11), 'a'.repeat(129)])(
+    'rejects unsupported registration lengths before writing records',
+    async (password) => {
+      const { db, methods } = authDatabase(passwordHash);
+      await request(makeApp(db))
+        .post('/api/v1/auth/register')
+        .set('Origin', origin)
+        .send({
+          businessName: 'Test shop',
+          name: 'Owner',
+          email: 'new@example.test',
+          phone: '12345678',
+          password,
+          passwordConfirmation: password,
+        })
+        .expect(400);
+      expect(methods.user.create).not.toHaveBeenCalled();
+    },
+  );
 });
