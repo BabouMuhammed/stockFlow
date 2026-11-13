@@ -26,6 +26,7 @@ export const envSchema = z
       )
       .optional(),
     SESSION_HOURS: z.coerce.number().int().min(1).max(24).default(8),
+    PROXY_MODE: z.enum(['none', 'cidr']).optional(),
     TRUSTED_PROXY_CIDRS: z
       .string()
       .max(4096)
@@ -48,10 +49,14 @@ export const envSchema = z
       for (const entry of value.WEB_ORIGINS ?? [])
         if (!productionOrigin.safeParse(entry).success)
           issue('WEB_ORIGINS', 'Production permits only exact public HTTPS origins');
-      if (value.DEPLOYMENT_MODE === 'app' && !value.TRUSTED_PROXY_CIDRS.length)
+      if (
+        value.DEPLOYMENT_MODE === 'app' &&
+        value.PROXY_MODE !== 'none' &&
+        !value.TRUSTED_PROXY_CIDRS.length
+      )
         issue(
           'TRUSTED_PROXY_CIDRS',
-          'Production requires explicitly verified ingress proxy IPs/CIDRs',
+          'Configure verified ingress IPs/CIDRs or explicitly set PROXY_MODE=none',
         );
       if (value.IMAGE_STORAGE === 'local')
         issue('IMAGE_STORAGE', 'Temporary local image storage is forbidden in production');
@@ -62,6 +67,10 @@ export const envSchema = z
         if (entry && !localOrigin.safeParse(entry).success)
           issue('WEB_ORIGIN', 'Development/test frontend origins must be loopback origins');
     }
+    if (value.PROXY_MODE === 'none' && value.TRUSTED_PROXY_CIDRS.length)
+      issue('TRUSTED_PROXY_CIDRS', 'PROXY_MODE=none forbids trusted proxy addresses');
+    if (value.PROXY_MODE === 'cidr' && !value.TRUSTED_PROXY_CIDRS.length)
+      issue('TRUSTED_PROXY_CIDRS', 'PROXY_MODE=cidr requires verified proxy addresses');
     if (value.DEPLOYMENT_MODE === 'bootstrap') {
       if (value.WEB_ORIGIN || value.WEB_ORIGINS)
         issue('WEB_ORIGIN', 'Omit frontend origins during bootstrap; browser APIs are disabled');
@@ -85,6 +94,7 @@ export const envSchema = z
   })
   .transform((value) => ({
     ...value,
+    PROXY_MODE: value.PROXY_MODE ?? (value.TRUSTED_PROXY_CIDRS.length ? 'cidr' : 'none'),
     WEB_ORIGIN:
       value.WEB_ORIGIN ??
       (value.DEPLOYMENT_MODE === 'bootstrap'

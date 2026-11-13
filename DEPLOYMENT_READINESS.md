@@ -6,6 +6,72 @@ Updated: 11 November 2026 (Europe/London).
 
 This document supersedes the initial readiness audit. No Prisma schema or migration, database record, local .env credential, or POS financial calculation was changed. Tests that apply migrations or create PostgreSQL records remain skipped. Production database connections have not been made.
 
+## Current Render and Vercel configuration (2026-11-13)
+
+The frontend is https://stock-flow-te4b-gamma.vercel.app and the API upstream is
+https://stockflow-l5ai.onrender.com. The Vercel API rewrite was published in
+329afd0. A public GET through the frontend's /api/v1/health/ready returned HTTP 200,
+database=connected, mode=bootstrap and applicationReady=false. This verifies
+forwarding and infrastructure readiness, not hosted login or business workflows.
+
+This revision supports **PROXY_MODE=none**: Express trusts no
+forwarded addresses and discards forwarded IP, protocol and host claims from
+untrusted peers. Secure cookies are forced by production configuration, independent
+of forwarded protocol. Exact HTTPS Origin validation and session CSRF remain
+required. No database or financial changes are needed for this mode.
+
+This is suitable for a small controlled demonstration with a limitation: authentication
+and staff-access rate limits use the socket address. People sharing a Render ingress
+address can share a bucket (10 failed authentication attempts per 15 minutes; 20
+staff-access requests per 15 minutes). Limits are process-local and reset on restart.
+Independent client limits and multiple-instance operation remain release gates.
+Do not raise limits or trust guessed headers to work around shared buckets.
+
+After reviewing and publishing **only the proxy configuration changes**:
+
+1. Deploy that API revision while retaining bootstrap mode first. Check its build
+   succeeds. Do not publish unrelated pending purchasing migrations implicitly.
+2. In Render, retain the existing DATABASE_URL secret. Set these entries together:
+   NODE_ENV=production, DEPLOYMENT_MODE=app, PROXY_MODE=none,
+   WEB_ORIGIN=https://stock-flow-te4b-gamma.vercel.app, SESSION_HOURS=8,
+   IMAGE_STORAGE=disabled and NODE_VERSION=22. See [.env.render.example](.env.render.example).
+3. Remove TRUSTED_PROXY_CIDRS, UPLOAD_DIR and stale WEB_ORIGINS. If WEB_ORIGINS is
+   needed, it must include exactly the canonical frontend origin and only other
+   explicitly approved HTTPS origins. Do not use localhost or preview wildcards.
+4. Keep Render's repository root blank, existing build/start commands and DATABASE_URL.
+   Render supplies PORT. On Free, the existing start command remains
+   `npm run db:deploy && node apps/api/dist/src/index.js`; migrations must be reviewed
+   before publishing a revision because startup applies pending migrations.
+5. On Vercel use root apps/web, VITE_API_URL=/api/v1, install command
+   `cd ../.. && npm ci --include=dev`, build command
+   `cd ../.. && npm run build --workspace apps/web`, output dist. The API rewrite
+   already points to the Render service and precedes the SPA fallback.
+6. After authorized activation, verify /api/v1/health/ready through Vercel no longer
+   reports bootstrap. Register fictional data, check Secure/HttpOnly/Strict cookies,
+   refresh, log out, and check rejected Origin/CSRF requests and deep-link refresh.
+   Hosted session forwarding remains unverified until these checks pass.
+
+PROXY_MODE=cidr remains available only with verified TRUSTED_PROXY_CIDRS; the prior
+CIDR policy remains the default requirement when production mode is not explicitly
+set to none. Setting none with nonempty CIDRs fails validation. Do not copy Render
+outbound addresses or inbound access restrictions into this variable.
+
+Application activation is a separate operator step. The older sections below
+record the original CIDR deployment policy and historical verification. Where they
+require CIDRs universally, this explicit no-trust mode supersedes that requirement.
+
+Proxy-change verification in the development workspace (including unpublished
+purchasing code): 106 API tests and 86 frontend tests passed.
+The 76 PostgreSQL integration tests were intentionally skipped by clearing
+TEST_DATABASE_URL for this run; no local or hosted database was changed. Lint,
+repository formatting, document formatting, API and frontend TypeScript checks,
+both production builds and isolated Prisma generation passed. Vite emitted
+nonfatal existing environment/annotation warnings. Normal in-place Prisma generation encountered
+the existing Windows engine DLL lock from the running prototype; generating into
+an ignored separate directory succeeded without stopping the prototype. The
+dependency lockfile is unchanged. Hosted login, cookies and rate-limit usability
+still require the acceptance checks after authorized publication and activation.
+
 ## Deploying the backend before the frontend
 
 Backend-first infrastructure deployment is supported with DEPLOYMENT_MODE=bootstrap. This mode exposes only /api/v1/health and /api/v1/health/ready. All login, registration and business requests return 503 BOOTSTRAP_MODE, no credentialed CORS is enabled, and forwarded headers are not trusted. Health responses explicitly contain mode=bootstrap and applicationReady=false. A successful readiness check confirms infrastructure only, not an enabled retail application.

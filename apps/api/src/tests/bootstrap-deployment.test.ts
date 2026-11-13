@@ -37,6 +37,14 @@ describe('backend-first bootstrap deployment without database writes', () => {
         TRUSTED_PROXY_CIDRS: '10.20.30.0/24',
       }).success,
     ).toBe(true);
+    expect(
+      envSchema.safeParse({
+        ...configuration,
+        DEPLOYMENT_MODE: 'app',
+        WEB_ORIGIN: 'https://demo.example.com',
+        PROXY_MODE: 'none',
+      }).success,
+    ).toBe(true);
   });
   it('exposes liveness and infrastructure readiness without claiming the application is enabled', async () => {
     const checkDatabase = vi.fn(async () => {});

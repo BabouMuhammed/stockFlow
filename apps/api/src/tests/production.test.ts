@@ -58,6 +58,22 @@ describe('production settings', () => {
   ])('rejects production origin %s', (value) => {
     expect(envSchema.safeParse({ ...production, WEB_ORIGIN: value }).success).toBe(false);
   });
+  it('permits an explicit no-trust production mode without guessed proxy addresses', () => {
+    const settings = { ...production, PROXY_MODE: 'none', TRUSTED_PROXY_CIDRS: undefined };
+    expect(envSchema.parse(settings)).toMatchObject({
+      PROXY_MODE: 'none',
+      TRUSTED_PROXY_CIDRS: [],
+    });
+    expect(envSchema.safeParse({ ...settings, WEB_ORIGIN: undefined }).success).toBe(false);
+    expect(envSchema.safeParse({ ...settings, WEB_ORIGIN: 'http://localhost:5173' }).success).toBe(
+      false,
+    );
+    expect(envSchema.safeParse({ ...settings, TRUSTED_PROXY_CIDRS: '10.20.30.0/24' }).success).toBe(
+      false,
+    );
+    expect(envSchema.safeParse({ ...settings, PROXY_MODE: 'cidr' }).success).toBe(false);
+    expect(envSchema.safeParse({ ...settings, PROXY_MODE: 'true' }).success).toBe(false);
+  });
   it.each(['', '*', 'true', '1', '0.0.0.0/0', '::/0', '10.0.0.0/33', 'loopback', '10.20.30.1,'])(
     'rejects unsafe proxy configuration %s',
     (value) => {
@@ -135,6 +151,18 @@ describe('proxy trust', () => {
       false,
     );
   });
+  it('discards forwarded identity and protocol when no proxies are trusted', async () => {
+    const app = probe([]);
+    app.get('/headers', (req, res) => res.json(req.headers));
+    const response = await request(app)
+      .get('/headers')
+      .set('X-Forwarded-For', '198.51.100.10')
+      .set('X-Forwarded-Proto', 'https')
+      .set('X-Forwarded-Host', 'attacker.example')
+      .set('Forwarded', 'for=198.51.100.10;proto=https');
+    for (const header of ['x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-host', 'forwarded'])
+      expect(response.body[header]).toBeUndefined();
+  });
 });
 
 // An in-memory Prisma-shaped double exercises HTTP/session/CSRF behavior without connecting to PostgreSQL.
@@ -204,6 +232,25 @@ describe('HTTPS authentication, CORS and image safety without database writes', 
       imageStorage: { mode: 'disabled' },
       checkDatabase: async () => {},
     });
+  it('does not let spoofed forwarded IPs bypass the no-trust login limiter', async () => {
+    const { db } = authDatabase(passwordHash);
+    const app = createApp({
+      db,
+      webOrigin: origin,
+      cookieSecure: true,
+      loginLimit: 2,
+      trustedProxyCidrs: [],
+      checkDatabase: async () => {},
+    });
+    for (let i = 0; i < 3; i++) {
+      await request(app)
+        .post('/api/v1/auth/login')
+        .set('Origin', 'https://attacker.example')
+        .set('X-Forwarded-For', `198.51.100.${i + 1}`)
+        .send({})
+        .expect(i < 2 ? 403 : 429);
+    }
+  });
   it('allows only the explicitly approved production CORS origin', async () => {
     const app = makeApp(authDatabase(passwordHash).db);
     const response = await request(app)
@@ -235,6 +282,8 @@ describe('HTTPS authentication, CORS and image safety without database writes', 
     const login = await request(app)
       .post('/api/v1/auth/login')
       .set('Origin', origin)
+      .set('X-Forwarded-Proto', 'http')
+      .set('X-Forwarded-For', '198.51.100.10')
       .send({ email: 'owner@example.test', password: 'Test-only-long-password' })
       .expect(200);
     const setCookie = String(login.headers['set-cookie'][0]);
