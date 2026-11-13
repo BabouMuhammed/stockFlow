@@ -4,8 +4,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://stockflow-api-not-configured.invalid/api/:path*"
+      "destination": "https://stockflow-l5ai.onrender.com/api/:path*"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
